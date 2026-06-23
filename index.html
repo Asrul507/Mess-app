@@ -128,35 +128,20 @@
     <section id="rooms" class="page">
       <div class="grid two-col">
         <article class="card form-card">
-          <div class="section-title">
-            <div>
-              <h3>Tambah Kamar/Bed</h3>
-              <p>Contoh sharing: 101A, 101B, 101C, 101D. Kamar sendiri: 102.</p>
-            </div>
-          </div>
+          <div class="section-title"><div><h3>Tambah Kamar/Bed</h3><p>Contoh sharing: 101A, 101B, 101C, 101D. Kamar sendiri: 102.</p></div></div>
           <form id="roomForm" class="form-grid compact">
             <label>No Kamar<input required id="roomNo" placeholder="101" /></label>
             <label>Kode Bed<input id="bedCode" placeholder="A / B / C / kosong jika sendiri" /></label>
             <label>Kapasitas<input required type="number" min="1" value="1" id="roomCapacity" /></label>
             <label>Tipe
-              <select id="roomType">
-                <option value="Single">Single</option>
-                <option value="Sharing 2">Sharing 2</option>
-                <option value="Sharing 4">Sharing 4</option>
-                <option value="Dormitory">Dormitory</option>
-              </select>
+              <select id="roomType"><option value="Single">Single</option><option value="Sharing 2">Sharing 2</option><option value="Sharing 4">Sharing 4</option><option value="Dormitory">Dormitory</option></select>
             </label>
             <button class="primary-btn" type="submit">Tambah Kamar</button>
           </form>
         </article>
 
         <article class="card form-card">
-          <div class="section-title">
-            <div>
-              <h3>Upload/Download Excel Kamar</h3>
-              <p>Upload file `.xlsx` atau `.csv`. Header: room_no, bed_code, capacity, type, floor, building, note.</p>
-            </div>
-          </div>
+          <div class="section-title"><div><h3>Upload/Download Excel Kamar</h3><p>Upload file `.xlsx` atau `.csv`. Header: room_no, bed_code, capacity, type, floor, building, note.</p></div></div>
           <input type="file" id="roomFile" accept=".xlsx,.xls,.csv" />
           <div class="button-row">
             <button class="secondary-btn" id="downloadRoomTemplate" type="button">Download Template Excel</button>
@@ -167,33 +152,19 @@
 
       <article class="card">
         <div class="section-title"><h3>Data Kamar</h3><span id="roomCountText">0 data</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Kamar</th><th>Bed</th><th>Tipe</th><th>Status</th><th>Penghuni</th></tr></thead>
-            <tbody id="roomTable"></tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table><thead><tr><th>Kamar</th><th>Bed</th><th>Tipe</th><th>Status</th><th>Penghuni</th></tr></thead><tbody id="roomTable"></tbody></table></div>
       </article>
     </section>
 
     <section id="employees" class="page">
       <div class="grid two-col">
         <article class="card form-card">
-          <div class="section-title">
-            <div>
-              <h3>Input Satu-satu Karyawan</h3>
-              <p>Field: nama, NIK, jabatan, posisi, office, dan nomor HP.</p>
-            </div>
-          </div>
+          <div class="section-title"><div><h3>Input Satu-satu Karyawan</h3><p>Field: nama, NIK, jabatan, posisi, office, dan nomor HP.</p></div></div>
           <form id="employeeForm" class="form-grid">
             <label>Nama<input required id="employeeName" /></label>
             <label>NIK<input required id="employeeNik" /></label>
             <label>Jabatan
-              <select required id="employeeLevel">
-                <option value="Staff">Staff</option>
-                <option value="Non Staff">Non Staff</option>
-                <option value="Manager">Manager</option>
-              </select>
+              <select required id="employeeLevel"><option value="Staff">Staff</option><option value="Non Staff">Non Staff</option><option value="Manager">Manager</option></select>
             </label>
             <label>Posisi<input required id="employeePosition" placeholder="Contoh: Cleaning Service Officer" /></label>
             <label>Office<input required id="employeeOffice" /></label>
@@ -203,12 +174,7 @@
         </article>
 
         <article class="card form-card">
-          <div class="section-title">
-            <div>
-              <h3>Upload/Download Excel Karyawan</h3>
-              <p>Upload file `.xlsx` atau `.csv`. Header: nama, nik, jabatan, posisi, office, no_hp.</p>
-            </div>
-          </div>
+          <div class="section-title"><div><h3>Upload/Download Excel Karyawan</h3><p>Upload file `.xlsx` atau `.csv`. Header: nama, nik, jabatan, posisi, office, no_hp.</p></div></div>
           <input type="file" id="employeeFile" accept=".xlsx,.xls,.csv" />
           <div class="button-row">
             <button class="secondary-btn" id="downloadEmployeeTemplate" type="button">Download Template Excel</button>
@@ -219,28 +185,16 @@
 
       <article class="card">
         <div class="section-title"><h3>List Karyawan</h3><span id="employeeCountText">0 data</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Office</th><th>No HP</th></tr></thead>
-            <tbody id="employeeTable"></tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Office</th><th>No HP</th></tr></thead><tbody id="employeeTable"></tbody></table></div>
       </article>
     </section>
 
     <section id="meal" class="page">
       <article class="card form-card">
-        <div class="section-title">
-          <div>
-            <h3>Absen Makan</h3>
-            <p>Hanya penghuni dengan status dapat makan = Ya yang idealnya boleh absen.</p>
-          </div>
-        </div>
+        <div class="section-title"><div><h3>Absen Makan</h3><p>Hanya penghuni dengan status dapat makan = Ya yang idealnya boleh absen.</p></div></div>
         <form id="mealForm" class="form-grid compact">
           <label>Penghuni<select required id="mealGuest"></select></label>
-          <label>Jenis Makan
-            <select required id="mealType"><option value="Pagi">Pagi</option><option value="Siang">Siang</option><option value="Malam">Malam</option></select>
-          </label>
+          <label>Jenis Makan<select required id="mealType"><option value="Pagi">Pagi</option><option value="Siang">Siang</option><option value="Malam">Malam</option></select></label>
           <label>Tanggal<input required type="date" id="mealDate" /></label>
           <label>Jam<input required type="time" id="mealTime" /></label>
           <button class="primary-btn" type="submit">Simpan Absen Makan</button>
@@ -250,35 +204,22 @@
 
     <section id="meal-report" class="page">
       <article class="card">
-        <div class="section-title">
-          <div><h3>Rekap Absen Makan</h3><p>Filter berdasarkan tanggal.</p></div>
-          <input type="date" id="mealReportDate" />
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Tanggal</th><th>Nama</th><th>Kamar</th><th>Office</th><th>Jenis</th><th>Jam</th></tr></thead>
-            <tbody id="mealReportTable"></tbody>
-          </table>
-        </div>
+        <div class="section-title"><div><h3>Rekap Absen Makan</h3><p>Filter berdasarkan tanggal.</p></div><input type="date" id="mealReportDate" /></div>
+        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Kamar</th><th>Office</th><th>Jenis</th><th>Jam</th></tr></thead><tbody id="mealReportTable"></tbody></table></div>
       </article>
     </section>
 
     <section id="guest-report" class="page">
       <article class="card">
-        <div class="section-title">
-          <div><h3>Rekap Penghuni Mess</h3><p>Konsepnya mirip in-house hotel, tapi untuk penghuni mess karyawan.</p></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Nama</th><th>NIK</th><th>Kamar/Bed</th><th>Office</th><th>Keperluan</th><th>Dapat Makan</th><th>Check In</th><th>Plan CO</th></tr></thead>
-            <tbody id="guestReportTable"></tbody>
-          </table>
-        </div>
+        <div class="section-title"><div><h3>Rekap Penghuni Mess</h3><p>Konsepnya mirip in-house hotel, tapi untuk penghuni mess karyawan.</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>NIK</th><th>Kamar/Bed</th><th>Office</th><th>Keperluan</th><th>Dapat Makan</th><th>Check In</th><th>Plan CO</th></tr></thead><tbody id="guestReportTable"></tbody></table></div>
       </article>
     </section>
   </main>
 
   <datalist id="employeeNames"></datalist>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="script.js"></script>
 </body>
