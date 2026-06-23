@@ -20,7 +20,7 @@
       <button class="nav-btn active" data-page="dashboard">Dashboard</button>
       <button class="nav-btn" data-page="checkin">Check In</button>
       <button class="nav-btn" data-page="inhouse">In House</button>
-      <button class="nav-btn" data-page="rooms">Data Kamar</button>
+      <button class="nav-btn" data-page="rooms">Room / Kamar</button>
       <button class="nav-btn" data-page="employees">Database Karyawan</button>
       <button class="nav-btn" data-page="meal">Absen Makan</button>
       <button class="nav-btn" data-page="meal-report">Rekap Makan</button>
@@ -40,14 +40,14 @@
     <section id="dashboard" class="page active">
       <div class="grid cards">
         <article class="card stat-card"><p>Total Kamar/Bed</p><strong id="totalRooms">0</strong></article>
-        <article class="card stat-card"><p>Available</p><strong id="availableBeds">0</strong></article>
-        <article class="card stat-card"><p>Occupied</p><strong id="occupiedBeds">0</strong></article>
-        <article class="card stat-card"><p>Maintenance</p><strong id="maintenanceBeds">0</strong></article>
+        <article class="card stat-card"><p>Bersih</p><strong id="cleanBeds">0</strong></article>
+        <article class="card stat-card"><p>Terisi</p><strong id="occupiedBeds">0</strong></article>
+        <article class="card stat-card"><p>Kotor/Rusak</p><strong id="dirtyBrokenBeds">0</strong></article>
       </div>
 
       <div class="grid two-col">
         <article class="card">
-          <div class="section-title"><h3>Status Kamar</h3><span id="roomStatusText">0 data</span></div>
+          <div class="section-title"><h3>Overview Status Kamar</h3><span id="roomStatusText">0 data</span></div>
           <div class="status-grid" id="roomStatusCards"></div>
         </article>
 
@@ -68,7 +68,7 @@
         <div class="section-title">
           <div>
             <h3>Input Check In</h3>
-            <p>Nama wajib terdaftar. Kalau belum ada, klik tambah karyawan baru.</p>
+            <p>Pilihan kamar hanya menampilkan kamar berstatus <b>bersih</b> dan belum ditempati.</p>
           </div>
         </div>
 
@@ -107,10 +107,7 @@
     <section id="inhouse" class="page">
       <article class="card">
         <div class="section-title">
-          <div>
-            <h3>In House</h3>
-            <p>Card per penghuni dengan aksi edit, check out, dan catatan.</p>
-          </div>
+          <div><h3>In House</h3><p>Card per penghuni dengan aksi edit, check out, dan catatan.</p></div>
           <span id="inhouseCountText">0 orang</span>
         </div>
         <div class="guest-card-grid" id="inhouseCards"></div>
@@ -118,49 +115,72 @@
     </section>
 
     <section id="rooms" class="page">
-      <div class="grid two-col">
-        <article class="card form-card">
-          <div class="section-title"><div><h3>Tambah Kamar/Bed</h3><p>Sharing bisa 2, 3, 4, 6, atau Dormitory.</p></div></div>
-          <form id="roomForm" class="form-grid compact">
-            <label>No Kamar<input required id="roomNo" placeholder="101" /></label>
-            <label>Kode Bed<input id="bedCode" placeholder="A / B / C / kosong jika sendiri" /></label>
-            <label>Kapasitas<input required type="number" min="1" value="1" id="roomCapacity" /></label>
-            <label>Tipe
-              <select id="roomType">
-                <option value="Single">Single</option>
-                <option value="Sharing 2">Sharing 2</option>
-                <option value="Sharing 3">Sharing 3</option>
-                <option value="Sharing 4">Sharing 4</option>
-                <option value="Sharing 6">Sharing 6</option>
-                <option value="Dormitory">Dormitory</option>
-              </select>
-            </label>
-            <label>Status
-              <select id="roomStatus">
-                <option value="available">Available</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-            <label>Gedung<input id="roomBuilding" placeholder="Mess A" /></label>
-            <button class="primary-btn" type="submit">Tambah/Update Kamar</button>
-          </form>
-        </article>
+      <article class="card tabs-card">
+        <div class="section-title">
+          <div><h3>Room / Kamar</h3><p>Sub menu: Overview, Status Kamar, dan Kamar Rusak.</p></div>
+        </div>
+        <div class="subnav">
+          <button class="subnav-btn active" data-room-tab="room-overview">Overview</button>
+          <button class="subnav-btn" data-room-tab="room-status">Status Kamar</button>
+          <button class="subnav-btn" data-room-tab="room-broken">Kamar Rusak</button>
+        </div>
+      </article>
 
-        <article class="card form-card">
-          <div class="section-title"><div><h3>Upload/Download Excel Kamar</h3><p>Header: room_no, bed_code, capacity, type, status, floor, building, note.</p></div></div>
-          <input type="file" id="roomFile" accept=".xlsx,.xls,.csv" />
-          <div class="button-row">
-            <button class="secondary-btn" id="downloadRoomTemplate" type="button">Download Template Excel</button>
-            <button class="secondary-btn" id="downloadRoomData" type="button">Download Data Kamar</button>
-          </div>
+      <div id="room-overview" class="room-tab active">
+        <div class="grid two-col">
+          <article class="card form-card">
+            <div class="section-title"><div><h3>Tambah Kamar/Bed</h3><p>Status: bersih, terisi, kotor, rusak. Terisi otomatis saat check in.</p></div></div>
+            <form id="roomForm" class="form-grid compact">
+              <label>No Kamar<input required id="roomNo" placeholder="101" /></label>
+              <label>Kode Bed<input id="bedCode" placeholder="A / B / C / kosong jika sendiri" /></label>
+              <label>Kapasitas<input required type="number" min="1" value="1" id="roomCapacity" /></label>
+              <label>Tipe
+                <select id="roomType">
+                  <option value="Single">Single</option>
+                  <option value="Sharing 2">Sharing 2</option>
+                  <option value="Sharing 3">Sharing 3</option>
+                  <option value="Sharing 4">Sharing 4</option>
+                  <option value="Sharing 6">Sharing 6</option>
+                  <option value="Dormitory">Dormitory</option>
+                </select>
+              </label>
+              <label>Status
+                <select id="roomStatus">
+                  <option value="bersih">Bersih</option>
+                  <option value="kotor">Kotor</option>
+                  <option value="rusak">Rusak</option>
+                </select>
+              </label>
+              <label>Gedung<input id="roomBuilding" placeholder="Mess A" /></label>
+              <button class="primary-btn" type="submit">Tambah/Update Kamar</button>
+            </form>
+          </article>
+
+          <article class="card form-card">
+            <div class="section-title"><div><h3>Upload/Download Excel Kamar</h3><p>Header: room_no, bed_code, capacity, type, status, floor, building, note.</p></div></div>
+            <input type="file" id="roomFile" accept=".xlsx,.xls,.csv" />
+            <div class="button-row">
+              <button class="secondary-btn" id="downloadRoomTemplate" type="button">Download Template Excel</button>
+              <button class="secondary-btn" id="downloadRoomData" type="button">Download Data Kamar</button>
+            </div>
+          </article>
+        </div>
+        <article class="card"><div class="section-title"><h3>Overview Kamar</h3><span id="roomCountText">0 data</span></div><div class="room-overview-grid" id="roomOverviewGrid"></div></article>
+      </div>
+
+      <div id="room-status" class="room-tab">
+        <article class="card">
+          <div class="section-title"><div><h3>Status Kamar</h3><p>Ubah status kamar dari sini. Kamar terisi tidak boleh diubah sebelum check out.</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Kamar</th><th>Bed</th><th>Tipe</th><th>Status</th><th>Penghuni</th><th>Aksi</th></tr></thead><tbody id="roomTable"></tbody></table></div>
         </article>
       </div>
 
-      <article class="card">
-        <div class="section-title"><h3>Data Kamar</h3><span id="roomCountText">0 data</span></div>
-        <div class="table-wrap"><table><thead><tr><th>Kamar</th><th>Bed</th><th>Tipe</th><th>Status</th><th>Penghuni</th></tr></thead><tbody id="roomTable"></tbody></table></div>
-      </article>
+      <div id="room-broken" class="room-tab">
+        <article class="card">
+          <div class="section-title"><div><h3>Kamar Rusak</h3><p>Daftar kamar/bed yang statusnya rusak.</p></div><span id="brokenRoomCountText">0 data</span></div>
+          <div class="table-wrap"><table><thead><tr><th>Kamar</th><th>Bed</th><th>Tipe</th><th>Gedung</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="brokenRoomTable"></tbody></table></div>
+        </article>
+      </div>
     </section>
 
     <section id="employees" class="page">
@@ -170,61 +190,25 @@
           <form id="employeeForm" class="form-grid">
             <label>Nama<input required id="employeeName" /></label>
             <label>NIK<input required id="employeeNik" /></label>
-            <label>Jabatan
-              <select required id="employeeLevel"><option value="Staff">Staff</option><option value="Non Staff">Non Staff</option><option value="Manager">Manager</option></select>
-            </label>
+            <label>Jabatan<select required id="employeeLevel"><option value="Staff">Staff</option><option value="Non Staff">Non Staff</option><option value="Manager">Manager</option></select></label>
             <label>Posisi<input required id="employeePosition" placeholder="Contoh: Cleaning Service Officer" /></label>
             <label>Office<input required id="employeeOffice" /></label>
             <label>No HP<input id="employeePhone" placeholder="08xxxxxxxxxx" /></label>
             <button class="primary-btn" type="submit">Simpan Karyawan</button>
           </form>
         </article>
-
         <article class="card form-card">
           <div class="section-title"><div><h3>Upload/Download Excel Karyawan</h3><p>Header: nama, nik, jabatan, posisi, office, no_hp.</p></div></div>
           <input type="file" id="employeeFile" accept=".xlsx,.xls,.csv" />
-          <div class="button-row">
-            <button class="secondary-btn" id="downloadEmployeeTemplate" type="button">Download Template Excel</button>
-            <button class="secondary-btn" id="downloadEmployeeData" type="button">Download Data Karyawan</button>
-          </div>
+          <div class="button-row"><button class="secondary-btn" id="downloadEmployeeTemplate" type="button">Download Template Excel</button><button class="secondary-btn" id="downloadEmployeeData" type="button">Download Data Karyawan</button></div>
         </article>
       </div>
-
-      <article class="card">
-        <div class="section-title"><h3>List Karyawan</h3><span id="employeeCountText">0 data</span></div>
-        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Office</th><th>No HP</th></tr></thead><tbody id="employeeTable"></tbody></table></div>
-      </article>
+      <article class="card"><div class="section-title"><h3>List Karyawan</h3><span id="employeeCountText">0 data</span></div><div class="table-wrap"><table><thead><tr><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Office</th><th>No HP</th></tr></thead><tbody id="employeeTable"></tbody></table></div></article>
     </section>
 
-    <section id="meal" class="page">
-      <article class="card">
-        <div class="section-title">
-          <div><h3>Absen Makan Cepat</h3><p>Klik tombol Pagi, Siang, atau Malam. Data langsung masuk rekap makan.</p></div>
-          <input type="date" id="mealQuickDate" />
-        </div>
-        <div class="meal-list" id="mealQuickList"></div>
-      </article>
-    </section>
-
-    <section id="meal-report" class="page">
-      <article class="card">
-        <div class="section-title"><div><h3>Rekap Absen Makan</h3><p>Filter berdasarkan tanggal.</p></div><input type="date" id="mealReportDate" /></div>
-        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Kamar</th><th>Office</th><th>Jenis</th><th>Jam</th></tr></thead><tbody id="mealReportTable"></tbody></table></div>
-      </article>
-    </section>
-
-    <section id="guest-report" class="page">
-      <article class="card">
-        <div class="section-title">
-          <div><h3>Laporan Tamu</h3><p>Data tamu/karyawan yang CI, In House, dan Check Out.</p></div>
-          <div class="report-actions">
-            <select id="guestReportStatus"><option value="all">Semua Status</option><option value="CI">CI</option><option value="In House">In House</option><option value="Check Out">Check Out</option></select>
-            <button class="secondary-btn no-margin" id="downloadGuestReport" type="button">Download Excel</button>
-          </div>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>Status</th><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Kamar/Bed</th><th>Office</th><th>Keperluan</th><th>Dapat Makan</th><th>Tanggal CI</th><th>Tanggal CO</th><th>Lama Menginap</th></tr></thead><tbody id="guestReportTable"></tbody></table></div>
-      </article>
-    </section>
+    <section id="meal" class="page"><article class="card"><div class="section-title"><div><h3>Absen Makan Cepat</h3><p>Klik Pagi, Siang, atau Malam. Data langsung masuk rekap makan.</p></div><input type="date" id="mealQuickDate" /></div><div class="meal-list" id="mealQuickList"></div></article></section>
+    <section id="meal-report" class="page"><article class="card"><div class="section-title"><div><h3>Rekap Absen Makan</h3><p>Filter berdasarkan tanggal.</p></div><input type="date" id="mealReportDate" /></div><div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Kamar</th><th>Office</th><th>Jenis</th><th>Jam</th></tr></thead><tbody id="mealReportTable"></tbody></table></div></article></section>
+    <section id="guest-report" class="page"><article class="card"><div class="section-title"><div><h3>Laporan Tamu</h3><p>Data tamu/karyawan yang CI, In House, dan Check Out.</p></div><div class="report-actions"><select id="guestReportStatus"><option value="all">Semua Status</option><option value="CI">CI</option><option value="In House">In House</option><option value="Check Out">Check Out</option></select><button class="secondary-btn no-margin" id="downloadGuestReport" type="button">Download Excel</button></div></div><div class="table-wrap"><table><thead><tr><th>Status</th><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Kamar/Bed</th><th>Office</th><th>Keperluan</th><th>Dapat Makan</th><th>Tanggal CI</th><th>Tanggal CO</th><th>Lama Menginap</th></tr></thead><tbody id="guestReportTable"></tbody></table></div></article></section>
   </main>
 
   <datalist id="employeeNames"></datalist>
