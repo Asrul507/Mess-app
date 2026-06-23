@@ -11,6 +11,7 @@ function initApp() {
   saveData(STORAGE_KEYS.purposes, state.purposes);
 
   initNavigation();
+  if (typeof prepareRoomMenuUi === 'function') prepareRoomMenuUi();
   initRoomsMenu();
   initEmployeesMenu();
   initCheckinMenu();
