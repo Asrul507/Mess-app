@@ -1,0 +1,171 @@
+function renderPurposeOptions() {
+  if (!$('purposeOptions')) return;
+  $('purposeOptions').innerHTML = state.purposes.map((purpose) => `<option value="${purpose}"></option>`).join('');
+}
+
+function renderRoomOptions() {
+  const select = $('guestRoom');
+  if (!select) return;
+  const availableRooms = state.rooms.filter((room) => room.status === 'bersih' && !roomOccupant(room.id));
+  select.innerHTML = availableRooms.length
+    ? availableRooms.map((room) => `<option value="${room.id}">${roomLabel(room)} - ${room.type}</option>`).join('')
+    : '<option value="">Tidak ada kamar bersih tersedia</option>';
+}
+
+function fillCheckinEmployee(employee) {
+  if ($('guestName')) $('guestName').value = employee.name || '';
+  if ($('guestNik')) $('guestNik').value = employee.nik || '';
+  if ($('guestLevel')) $('guestLevel').value = employee.level || '';
+  if ($('guestPosition')) $('guestPosition').value = employee.position || '';
+  if ($('guestOffice')) $('guestOffice').value = employee.office || '';
+}
+
+function handleGuestNameCheck() {
+  const name = text($('guestName')?.value);
+  const notice = $('newEmployeeNotice');
+  if (!name) {
+    notice?.classList.add('hidden');
+    return;
+  }
+
+  const employee = findEmployeeByName(name);
+  if (employee) {
+    fillCheckinEmployee(employee);
+    notice?.classList.add('hidden');
+    return;
+  }
+
+  if ($('guestNik')) $('guestNik').value = '';
+  if ($('guestLevel')) $('guestLevel').value = '';
+  if ($('guestPosition')) $('guestPosition').value = '';
+  notice?.classList.remove('hidden');
+}
+
+function goAddEmployeeFromCheckin() {
+  pendingCheckinEmployeeName = text($('guestName')?.value);
+  if ($('employeeName')) $('employeeName').value = pendingCheckinEmployeeName;
+  if ($('employeeNik')) $('employeeNik').value = text($('guestNik')?.value);
+  if ($('employeeOffice')) $('employeeOffice').value = text($('guestOffice')?.value);
+  showPage('employees', 'Database Karyawan');
+  $('employeeNik')?.focus();
+}
+
+function renderCheckin() {
+  renderPurposeOptions();
+  renderRoomOptions();
+  handleGuestNameCheck();
+}
+
+function renderInhouse() {
+  const guests = activeGuests();
+  if ($('inhouseCountText')) $('inhouseCountText').textContent = `${guests.length} orang`;
+  if (!$('inhouseCards')) return;
+
+  $('inhouseCards').innerHTML = guests.length
+    ? guests.map((guest) => {
+      const room = roomOfGuest(guest);
+      const employee = employeeOfGuest(guest);
+      return `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>Jabatan</b>${employee.level || guest.level || '-'}</span><span><b>Posisi</b>${employee.position || guest.position || '-'}</span><span><b>Tgl CI</b>${guest.checkinDate}</span><span><b>Lama Menginap</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose}</span><span><b>Makan</b>${guest.mealEligible}</span></div>${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}<div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`;
+    }).join('')
+    : '<div class="empty-card">Belum ada penghuni In House.</div>';
+}
+
+function editGuest(guestId) {
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  editingGuestId = guest.id;
+  fillCheckinEmployee({ name: guest.name, nik: guest.nik, level: guest.level, position: guest.position, office: guest.office });
+  if ($('guestPurpose')) $('guestPurpose').value = guest.purpose || '';
+  if ($('guestMealEligible')) $('guestMealEligible').value = guest.mealEligible || 'Ya';
+  if ($('guestCheckinDate')) $('guestCheckinDate').value = guest.checkinDate || todayIso();
+  if ($('guestNote')) $('guestNote').value = guest.note || '';
+  renderRoomOptions();
+  const currentRoom = roomOfGuest(guest);
+  const option = document.createElement('option');
+  option.value = guest.roomId;
+  option.textContent = `${roomLabel(currentRoom)} - ${currentRoom?.type || ''} (current)`;
+  $('guestRoom')?.prepend(option);
+  if ($('guestRoom')) $('guestRoom').value = guest.roomId;
+  showPage('checkin', 'Edit In House');
+}
+
+function updateGuestNote(guestId) {
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  const note = prompt(`Catatan untuk ${guest.name}`, guest.note || '');
+  if (note === null) return;
+  guest.note = text(note);
+  saveData(STORAGE_KEYS.guests, state.guests);
+  renderAll();
+}
+
+function checkoutGuest(guestId) {
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  if (!confirm(`Check out ${guest.name} hari ini?`)) return;
+  guest.status = 'Check Out';
+  guest.checkoutDate = todayIso();
+  const room = roomOfGuest(guest);
+  if (room) room.status = 'kotor';
+  saveData(STORAGE_KEYS.guests, state.guests);
+  saveData(STORAGE_KEYS.rooms, state.rooms);
+  renderAll();
+}
+
+function initCheckinMenu() {
+  if ($('guestCheckinDate')) $('guestCheckinDate').value = todayIso();
+
+  $('guestName')?.addEventListener('input', handleGuestNameCheck);
+  $('guestName')?.addEventListener('change', handleGuestNameCheck);
+  $('goAddEmployeeBtn')?.addEventListener('click', goAddEmployeeFromCheckin);
+  $('savePurposeBtn')?.addEventListener('click', () => {
+    addPurpose($('guestPurpose')?.value);
+    renderPurposeOptions();
+    alert('Keperluan tersimpan.');
+  });
+
+  $('checkinForm')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const employee = findEmployeeByName($('guestName')?.value);
+    const room = state.rooms.find((item) => item.id === $('guestRoom')?.value);
+
+    if (!employee) return alert('Nama karyawan belum ada di database.');
+    if (!room || room.status !== 'bersih' || roomOccupant(room.id)) return alert('Kamar tidak tersedia. Pilih kamar bersih yang kosong.');
+
+    const purpose = text($('guestPurpose')?.value);
+    addPurpose(purpose);
+
+    const data = {
+      employeeId: employee.id,
+      name: employee.name,
+      nik: employee.nik,
+      level: employee.level,
+      position: employee.position,
+      roomId: room.id,
+      office: text($('guestOffice')?.value),
+      purpose,
+      mealEligible: $('guestMealEligible')?.value || 'Ya',
+      checkinDate: $('guestCheckinDate')?.value || todayIso(),
+      checkoutDate: '',
+      note: text($('guestNote')?.value),
+      status: 'In House',
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (editingGuestId) {
+      const index = state.guests.findIndex((guest) => guest.id === editingGuestId);
+      if (index >= 0) state.guests[index] = { ...state.guests[index], ...data };
+      editingGuestId = null;
+    } else {
+      state.guests.push({ id: uid(), ...data, createdAt: new Date().toISOString() });
+    }
+
+    room.status = 'terisi';
+    saveData(STORAGE_KEYS.guests, state.guests);
+    saveData(STORAGE_KEYS.rooms, state.rooms);
+    event.target.reset();
+    if ($('guestCheckinDate')) $('guestCheckinDate').value = todayIso();
+    renderAll();
+    showPage('inhouse', 'In House');
+  });
+}
