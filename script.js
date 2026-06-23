@@ -30,22 +30,41 @@ function loadData(key, fallback) {
   }
 }
 
-function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
-function normalizeText(value) { return String(value || '').trim(); }
-function normalizeName(value) { return normalizeText(value).toLowerCase(); }
-function todayIso() { return new Date().toISOString().slice(0, 10); }
-function currentTime() { return new Date().toTimeString().slice(0, 5); }
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function normalizeText(value) {
+  return String(value || '').trim();
+}
+
+function normalizeName(value) {
+  return normalizeText(value).toLowerCase();
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function currentTime() {
+  return new Date().toTimeString().slice(0, 5);
+}
 
 function formatDate(date = new Date()) {
-  return new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+  return new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
 }
 
 function seedRooms() {
   return [
     { id: crypto.randomUUID(), roomNo: '101', bedCode: 'A', capacity: 1, type: 'Sharing 4', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
     { id: crypto.randomUUID(), roomNo: '101', bedCode: 'B', capacity: 1, type: 'Sharing 4', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
-    { id: crypto.randomUUID(), roomNo: '101', bedCode: 'C', capacity: 1, type: 'Sharing 4', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
-    { id: crypto.randomUUID(), roomNo: '101', bedCode: 'D', capacity: 1, type: 'Sharing 4', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
+    { id: crypto.randomUUID(), roomNo: '101', bedCode: 'C', capacity: 1, type: 'Sharing 4', status: 'kotor', floor: '1', building: 'Mess A', note: '' },
+    { id: crypto.randomUUID(), roomNo: '101', bedCode: 'D', capacity: 1, type: 'Sharing 4', status: 'rusak', floor: '1', building: 'Mess A', note: 'Contoh kamar rusak' },
     { id: crypto.randomUUID(), roomNo: '102', bedCode: '', capacity: 1, type: 'Single', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
     { id: crypto.randomUUID(), roomNo: '201', bedCode: 'A', capacity: 1, type: 'Sharing 3', status: 'bersih', floor: '2', building: 'Mess A', note: '' },
     { id: crypto.randomUUID(), roomNo: '201', bedCode: 'B', capacity: 1, type: 'Sharing 3', status: 'bersih', floor: '2', building: 'Mess A', note: '' },
@@ -53,42 +72,63 @@ function seedRooms() {
   ];
 }
 
-function normalizeRoomStatus(status) {
-  const value = normalizeName(status);
-  if (value === 'available') return 'bersih';
-  if (value === 'occupied') return 'terisi';
-  if (value === 'dirty') return 'kotor';
-  if (value === 'maintenance' || value === 'inactive' || value === 'broken') return 'rusak';
-  if (ROOM_STATUSES.includes(value)) return value;
-  return 'bersih';
+function migrateOldRoomStatuses() {
+  let changed = false;
+  state.rooms.forEach((room) => {
+    if (room.status === 'available') { room.status = 'bersih'; changed = true; }
+    if (room.status === 'occupied') { room.status = 'terisi'; changed = true; }
+    if (room.status === 'maintenance' || room.status === 'inactive') { room.status = 'rusak'; changed = true; }
+    if (!ROOM_STATUSES.includes(room.status)) { room.status = 'bersih'; changed = true; }
+  });
+  if (changed) saveData(STORAGE_KEYS.rooms, state.rooms);
 }
 
-function roomLabel(room) { return room?.bedCode ? `${room.roomNo}${room.bedCode}` : room?.roomNo || '-'; }
-function getActiveGuests() { return state.guests.filter((guest) => guest.status === 'In House'); }
-function getGuestRoom(guest) { return state.rooms.find((room) => room.id === guest.roomId); }
-function getEmployeeById(id) { return state.employees.find((employee) => employee.id === id); }
-function getRoomOccupant(roomId) { return getActiveGuests().find((guest) => guest.roomId === roomId); }
-function isRoomOccupied(roomId) { return Boolean(getRoomOccupant(roomId)); }
-function findEmployeeByName(name) { return state.employees.find((employee) => normalizeName(employee.name) === normalizeName(name)); }
-function emptyRow(colspan, text) { return `<tr><td class="empty" colspan="${colspan}">${text}</td></tr>`; }
-function badge(text, type = 'ok') { return `<span class="badge ${type}">${text}</span>`; }
-
-function roomStatusClass(status) {
-  const value = normalizeRoomStatus(status);
-  if (value === 'bersih') return 'ok';
-  if (value === 'terisi') return 'danger';
-  if (value === 'kotor') return 'warn';
-  return 'muted';
+function roomLabel(room) {
+  return room?.bedCode ? `${room.roomNo}${room.bedCode}` : room?.roomNo || '-';
 }
 
-function statusBadge(status) { return badge(normalizeRoomStatus(status), roomStatusClass(status)); }
+function getActiveGuests() {
+  return state.guests.filter((guest) => guest.status === 'In House');
+}
+
+function getGuestRoom(guest) {
+  return state.rooms.find((room) => room.id === guest.roomId);
+}
+
+function getRoomOccupant(roomId) {
+  return getActiveGuests().find((guest) => guest.roomId === roomId);
+}
+
+function isRoomOccupied(roomId) {
+  return Boolean(getRoomOccupant(roomId));
+}
+
+function getEmployeeById(id) {
+  return state.employees.find((employee) => employee.id === id);
+}
+
+function findEmployeeByName(name) {
+  return state.employees.find((employee) => normalizeName(employee.name) === normalizeName(name));
+}
 
 function nightsSince(checkinDate, checkoutDate = null) {
   if (!checkinDate) return 0;
   const start = new Date(`${checkinDate}T00:00:00`);
   const end = new Date(`${checkoutDate || todayIso()}T00:00:00`);
-  const diff = Math.floor((end - start) / 86400000);
-  return Math.max(diff + 1, 1);
+  return Math.max(Math.floor((end - start) / 86400000) + 1, 1);
+}
+
+function emptyRow(colspan, text) {
+  return `<tr><td class="empty" colspan="${colspan}">${text}</td></tr>`;
+}
+
+function badge(text, type = 'ok') {
+  return `<span class="badge ${type}">${text}</span>`;
+}
+
+function roomStatusBadge(status) {
+  const map = { bersih: 'ok', terisi: 'danger', kotor: 'warn', rusak: 'muted' };
+  return badge(status || '-', map[status] || 'muted');
 }
 
 function showPage(pageId, title = '') {
@@ -97,25 +137,51 @@ function showPage(pageId, title = '') {
   document.getElementById('pageTitle').textContent = title || document.querySelector(`[data-page="${pageId}"]`)?.textContent || '';
 }
 
-function showRoomTab(tabId) {
-  document.querySelectorAll('.subnav-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.roomTab === tabId));
-  document.querySelectorAll('.room-tab').forEach((tab) => tab.classList.toggle('active', tab.id === tabId));
-}
-
 function renderNavigation() {
   document.querySelectorAll('.nav-btn').forEach((button) => button.addEventListener('click', () => showPage(button.dataset.page, button.textContent)));
-  document.querySelectorAll('.subnav-btn').forEach((button) => button.addEventListener('click', () => showRoomTab(button.dataset.roomTab)));
+  document.querySelectorAll('.tab-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.remove('active'));
+      document.querySelectorAll('.room-tab').forEach((tab) => tab.classList.remove('active'));
+      button.classList.add('active');
+      document.getElementById(`roomTab${capitalize(button.dataset.roomTab)}`).classList.add('active');
+    });
+  });
 }
 
-function syncRoomStatusesFromGuests() {
-  state.rooms.forEach((room) => {
-    room.status = normalizeRoomStatus(room.status);
-    const occupied = isRoomOccupied(room.id);
-    if (occupied) room.status = 'terisi';
-    if (!occupied && room.status === 'terisi') room.status = 'kotor';
-  });
-  saveData(STORAGE_KEYS.rooms, state.rooms);
+function capitalize(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
+
+function syncRoomStatusWithGuests() {
+  let changed = false;
+  state.rooms.forEach((room) => {
+    const occupied = isRoomOccupied(room.id);
+    if (occupied && room.status !== 'terisi') {
+      room.status = 'terisi';
+      changed = true;
+    }
+    if (!occupied && room.status === 'terisi') {
+      room.status = 'kotor';
+      changed = true;
+    }
+  });
+  if (changed) saveData(STORAGE_KEYS.rooms, state.rooms);
+}
+
+function setRoomStatus(roomId, status) {
+  const room = state.rooms.find((item) => item.id === roomId);
+  if (!room) return;
+  if (status === 'bersih' && isRoomOccupied(roomId)) {
+    alert('Kamar masih terisi, tidak bisa diubah ke bersih.');
+    return;
+  }
+  room.status = status;
+  saveData(STORAGE_KEYS.rooms, state.rooms);
+  renderAll();
+}
+
+window.setRoomStatus = setRoomStatus;
 
 function addPurposeIfNew(value) {
   const purpose = normalizeText(value);
@@ -128,30 +194,22 @@ function addPurposeIfNew(value) {
   }
 }
 
-function roomCounts() {
-  return {
-    bersih: state.rooms.filter((room) => normalizeRoomStatus(room.status) === 'bersih').length,
-    terisi: state.rooms.filter((room) => normalizeRoomStatus(room.status) === 'terisi').length,
-    kotor: state.rooms.filter((room) => normalizeRoomStatus(room.status) === 'kotor').length,
-    rusak: state.rooms.filter((room) => normalizeRoomStatus(room.status) === 'rusak').length,
-  };
-}
-
 function renderDashboard() {
-  syncRoomStatusesFromGuests();
-  const counts = roomCounts();
+  syncRoomStatusWithGuests();
+  const counts = countRoomStatuses();
   const todaysMeals = state.meals.filter((meal) => meal.date === todayIso());
 
-  document.getElementById('totalRooms').textContent = state.rooms.length;
-  document.getElementById('cleanBeds').textContent = counts.bersih;
-  document.getElementById('occupiedBeds').textContent = counts.terisi;
-  document.getElementById('dirtyBrokenBeds').textContent = counts.kotor + counts.rusak;
-  document.getElementById('roomStatusText').textContent = `${state.rooms.length} kamar/bed`;
+  document.getElementById('cleanRooms').textContent = counts.bersih;
+  document.getElementById('occupiedRooms').textContent = counts.terisi;
+  document.getElementById('dirtyRooms').textContent = counts.kotor;
+  document.getElementById('brokenRooms').textContent = counts.rusak;
+  document.getElementById('roomOverviewText').textContent = `${state.rooms.length} kamar/bed`;
   document.getElementById('roomStatusCards').innerHTML = `
     <div class="mini-status ok"><strong>${counts.bersih}</strong><span>Bersih</span></div>
     <div class="mini-status danger"><strong>${counts.terisi}</strong><span>Terisi</span></div>
     <div class="mini-status warn"><strong>${counts.kotor}</strong><span>Kotor</span></div>
-    <div class="mini-status muted"><strong>${counts.rusak}</strong><span>Rusak</span></div>`;
+    <div class="mini-status muted"><strong>${counts.rusak}</strong><span>Rusak</span></div>
+  `;
 
   document.getElementById('mealTodayCount').textContent = `${todaysMeals.length} absen`;
   document.getElementById('mealTodayTable').innerHTML = todaysMeals.length
@@ -159,8 +217,15 @@ function renderDashboard() {
     : emptyRow(3, 'Belum ada absen makan hari ini');
 }
 
+function countRoomStatuses() {
+  return ROOM_STATUSES.reduce((acc, status) => {
+    acc[status] = state.rooms.filter((room) => room.status === status).length;
+    return acc;
+  }, { bersih: 0, terisi: 0, kotor: 0, rusak: 0 });
+}
+
 function renderRoomOptions() {
-  const cleanRooms = state.rooms.filter((room) => normalizeRoomStatus(room.status) === 'bersih' && !isRoomOccupied(room.id));
+  const cleanRooms = state.rooms.filter((room) => room.status === 'bersih' && !isRoomOccupied(room.id));
   document.getElementById('guestRoom').innerHTML = cleanRooms.length
     ? cleanRooms.map((room) => `<option value="${room.id}">${roomLabel(room)} - ${room.type}</option>`).join('')
     : '<option value="">Tidak ada kamar bersih yang kosong</option>';
@@ -170,39 +235,51 @@ function renderPurposeOptions() {
   document.getElementById('purposeOptions').innerHTML = state.purposes.map((purpose) => `<option value="${purpose}"></option>`).join('');
 }
 
-function renderRoomOverview() {
-  const counts = roomCounts();
-  document.getElementById('roomCountText').textContent = `${state.rooms.length} data`;
-  document.getElementById('roomOverviewGrid').innerHTML = `
-    <div class="room-overview-card ok"><strong>${counts.bersih}</strong><span>Bersih dan siap check in</span></div>
-    <div class="room-overview-card danger"><strong>${counts.terisi}</strong><span>Terisi / In House</span></div>
-    <div class="room-overview-card warn"><strong>${counts.kotor}</strong><span>Kotor setelah check out</span></div>
-    <div class="room-overview-card muted"><strong>${counts.rusak}</strong><span>Rusak / tidak bisa dipakai</span></div>`;
-}
-
 function renderRooms() {
-  document.getElementById('roomTable').innerHTML = state.rooms.length
+  document.getElementById('roomCountText').textContent = `${state.rooms.length} data`;
+  document.getElementById('roomOverviewGrid').innerHTML = state.rooms.length
     ? state.rooms.map((room) => {
       const occupant = getRoomOccupant(room.id);
-      const disabled = occupant ? 'disabled' : '';
-      return `<tr>
-        <td>${room.roomNo}</td><td>${room.bedCode || '-'}</td><td>${room.type}</td><td>${statusBadge(room.status)}</td><td>${occupant ? occupant.name : '-'}</td>
-        <td>
-          <select class="status-select" ${disabled} onchange="changeRoomStatus('${room.id}', this.value)">
-            ${ROOM_STATUSES.map((status) => `<option value="${status}" ${normalizeRoomStatus(room.status) === status ? 'selected' : ''}>${status}</option>`).join('')}
-          </select>
-        </td>
-      </tr>`;
+      return `
+        <article class="room-card ${room.status}">
+          <div class="room-card-head"><strong>${roomLabel(room)}</strong>${roomStatusBadge(room.status)}</div>
+          <p>${room.type} • ${room.building || '-'}</p>
+          <small>${occupant ? occupant.name : 'Kosong'}</small>
+        </article>`;
     }).join('')
-    : emptyRow(6, 'Belum ada data kamar');
-}
+    : '<div class="empty-card">Belum ada data kamar.</div>';
 
-function renderBrokenRooms() {
-  const rows = state.rooms.filter((room) => normalizeRoomStatus(room.status) === 'rusak');
-  document.getElementById('brokenRoomCountText').textContent = `${rows.length} data`;
-  document.getElementById('brokenRoomTable').innerHTML = rows.length
-    ? rows.map((room) => `<tr><td>${room.roomNo}</td><td>${room.bedCode || '-'}</td><td>${room.type}</td><td>${room.building || '-'}</td><td>${room.note || '-'}</td><td><button class="secondary-btn no-margin" onclick="changeRoomStatus('${room.id}', 'bersih')">Set Bersih</button></td></tr>`).join('')
-    : emptyRow(6, 'Tidak ada kamar rusak');
+  document.getElementById('roomStatusTable').innerHTML = state.rooms.length
+    ? state.rooms.map((room) => {
+      const occupant = getRoomOccupant(room.id);
+      const disabledClean = occupant ? 'disabled' : '';
+      return `
+        <tr>
+          <td>${roomLabel(room)}</td>
+          <td>${room.type}</td>
+          <td>${roomStatusBadge(room.status)}</td>
+          <td>${occupant ? occupant.name : '-'}</td>
+          <td>
+            <div class="table-actions">
+              <button class="mini-btn" ${disabledClean} onclick="setRoomStatus('${room.id}', 'bersih')">Bersih</button>
+              <button class="mini-btn" onclick="setRoomStatus('${room.id}', 'kotor')">Kotor</button>
+              <button class="mini-btn" onclick="setRoomStatus('${room.id}', 'rusak')">Rusak</button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('')
+    : emptyRow(5, 'Belum ada data kamar');
+
+  const brokenRooms = state.rooms.filter((room) => room.status === 'rusak');
+  document.getElementById('brokenRoomCountText').textContent = `${brokenRooms.length} rusak`;
+  document.getElementById('brokenRoomCards').innerHTML = brokenRooms.length
+    ? brokenRooms.map((room) => `
+      <article class="guest-card">
+        <div class="guest-card-head"><div><h3>${roomLabel(room)}</h3><p>${room.type} • ${room.building || '-'}</p></div>${roomStatusBadge(room.status)}</div>
+        <p class="note-text">${room.note || 'Belum ada catatan kerusakan.'}</p>
+        <div class="card-actions"><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}', 'kotor')">Jadikan Kotor</button><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}', 'bersih')">Sudah Bersih</button></div>
+      </article>`).join('')
+    : '<div class="empty-card">Tidak ada kamar rusak.</div>';
 }
 
 function renderEmployees() {
@@ -220,16 +297,20 @@ function renderInhouseCards() {
     ? activeGuests.map((guest) => {
       const room = getGuestRoom(guest);
       const employee = getEmployeeById(guest.employeeId) || {};
-      return `<article class="guest-card">
-        <div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge(guest.status, 'danger')}</div>
-        <div class="guest-info">
-          <span><b>Jabatan</b>${employee.level || guest.level || '-'}</span><span><b>Posisi</b>${employee.position || guest.position || '-'}</span>
-          <span><b>Tgl CI</b>${guest.checkinDate}</span><span><b>Lama Menginap</b>${nightsSince(guest.checkinDate)} hari</span>
-          <span><b>Keperluan</b>${guest.purpose}</span><span><b>Makan</b>${guest.mealEligible}</span>
-        </div>
-        ${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}
-        <div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div>
-      </article>`;
+      return `
+        <article class="guest-card">
+          <div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge(guest.status, 'danger')}</div>
+          <div class="guest-info">
+            <span><b>Jabatan</b>${employee.level || guest.level || '-'}</span>
+            <span><b>Posisi</b>${employee.position || guest.position || '-'}</span>
+            <span><b>Tgl CI</b>${guest.checkinDate}</span>
+            <span><b>Lama Menginap</b>${nightsSince(guest.checkinDate)} hari</span>
+            <span><b>Keperluan</b>${guest.purpose}</span>
+            <span><b>Makan</b>${guest.mealEligible}</span>
+          </div>
+          ${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}
+          <div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div>
+        </article>`;
     }).join('')
     : '<div class="empty-card">Belum ada penghuni In House.</div>';
 }
@@ -261,7 +342,21 @@ function guestReportRows() {
   return state.guests.filter((guest) => filter === 'all' || guest.status === filter).map((guest) => {
     const room = getGuestRoom(guest);
     const employee = getEmployeeById(guest.employeeId) || {};
-    return { status: guest.status, nama: guest.name, nik: guest.nik || employee.nik || '', jabatan: employee.level || guest.level || '', posisi: employee.position || guest.position || '', kamar: roomLabel(room), office: guest.office, keperluan: guest.purpose, dapat_makan: guest.mealEligible, tanggal_ci: guest.checkinDate, tanggal_co: guest.checkoutDate || '', lama_menginap: `${nightsSince(guest.checkinDate, guest.checkoutDate)} hari`, catatan: guest.note || '' };
+    return {
+      status: guest.status,
+      nama: guest.name,
+      nik: guest.nik || employee.nik || '',
+      jabatan: employee.level || guest.level || '',
+      posisi: employee.position || guest.position || '',
+      kamar: roomLabel(room),
+      office: guest.office,
+      keperluan: guest.purpose,
+      dapat_makan: guest.mealEligible,
+      tanggal_ci: guest.checkinDate,
+      tanggal_co: guest.checkoutDate || '',
+      lama_menginap: `${nightsSince(guest.checkinDate, guest.checkoutDate)} hari`,
+      catatan: guest.note || '',
+    };
   });
 }
 
@@ -273,13 +368,11 @@ function renderGuestReport() {
 }
 
 function renderAll() {
-  syncRoomStatusesFromGuests();
+  syncRoomStatusWithGuests();
   renderDashboard();
   renderRoomOptions();
   renderPurposeOptions();
-  renderRoomOverview();
   renderRooms();
-  renderBrokenRooms();
   renderEmployees();
   renderInhouseCards();
   renderMealQuickList();
@@ -290,120 +383,365 @@ function renderAll() {
 
 function createOrUpdateEmployee(employee) {
   const existingIndex = state.employees.findIndex((item) => normalizeText(item.nik) === normalizeText(employee.nik) || normalizeName(item.name) === normalizeName(employee.name));
-  if (existingIndex >= 0) { state.employees[existingIndex] = { ...state.employees[existingIndex], ...employee }; return state.employees[existingIndex]; }
-  const newEmployee = { id: crypto.randomUUID(), ...employee }; state.employees.push(newEmployee); return newEmployee;
+  if (existingIndex >= 0) {
+    state.employees[existingIndex] = { ...state.employees[existingIndex], ...employee };
+    return state.employees[existingIndex];
+  }
+  const newEmployee = { id: crypto.randomUUID(), ...employee };
+  state.employees.push(newEmployee);
+  return newEmployee;
 }
 
 function createOrUpdateRoom(room) {
   const existingIndex = state.rooms.findIndex((item) => normalizeText(item.roomNo) === normalizeText(room.roomNo) && normalizeText(item.bedCode).toUpperCase() === normalizeText(room.bedCode).toUpperCase());
-  room.status = normalizeRoomStatus(room.status);
-  if (existingIndex >= 0) { state.rooms[existingIndex] = { ...state.rooms[existingIndex], ...room }; return state.rooms[existingIndex]; }
-  const newRoom = { id: crypto.randomUUID(), ...room }; state.rooms.push(newRoom); return newRoom;
+  if (existingIndex >= 0) {
+    state.rooms[existingIndex] = { ...state.rooms[existingIndex], ...room };
+    return state.rooms[existingIndex];
+  }
+  const newRoom = { id: crypto.randomUUID(), ...room };
+  state.rooms.push(newRoom);
+  return newRoom;
 }
 
 function bindForms() {
   document.getElementById('roomForm').addEventListener('submit', (event) => {
     event.preventDefault();
-    createOrUpdateRoom({ roomNo: normalizeText(roomNo.value), bedCode: normalizeText(bedCode.value).toUpperCase(), capacity: Number(roomCapacity.value || 1), type: roomType.value, status: roomStatus.value, floor: '', building: normalizeText(roomBuilding.value), note: '' });
-    saveData(STORAGE_KEYS.rooms, state.rooms); event.target.reset(); roomCapacity.value = 1; renderAll();
+    createOrUpdateRoom({
+      roomNo: normalizeText(document.getElementById('roomNo').value),
+      bedCode: normalizeText(document.getElementById('bedCode').value).toUpperCase(),
+      capacity: Number(document.getElementById('roomCapacity').value || 1),
+      type: document.getElementById('roomType').value,
+      status: document.getElementById('roomStatus').value,
+      floor: '',
+      building: normalizeText(document.getElementById('roomBuilding').value),
+      note: '',
+    });
+    saveData(STORAGE_KEYS.rooms, state.rooms);
+    event.target.reset();
+    document.getElementById('roomCapacity').value = 1;
+    renderAll();
   });
 
   document.getElementById('employeeForm').addEventListener('submit', (event) => {
     event.preventDefault();
-    const employee = createOrUpdateEmployee({ name: normalizeText(employeeName.value), nik: normalizeText(employeeNik.value), level: employeeLevel.value, position: normalizeText(employeePosition.value), office: normalizeText(employeeOffice.value), phone: normalizeText(employeePhone.value) });
+    const employee = createOrUpdateEmployee({
+      name: normalizeText(document.getElementById('employeeName').value),
+      nik: normalizeText(document.getElementById('employeeNik').value),
+      level: document.getElementById('employeeLevel').value,
+      position: normalizeText(document.getElementById('employeePosition').value),
+      office: normalizeText(document.getElementById('employeeOffice').value),
+      phone: normalizeText(document.getElementById('employeePhone').value),
+    });
     saveData(STORAGE_KEYS.employees, state.employees);
-    if (pendingCheckinEmployeeName && normalizeName(employee.name) === normalizeName(pendingCheckinEmployeeName)) { fillCheckinEmployee(employee); pendingCheckinEmployeeName = ''; event.target.reset(); renderAll(); showPage('checkin', 'Check In'); alert('Data karyawan berhasil ditambahkan dan otomatis dipakai di form check in.'); return; }
-    event.target.reset(); renderAll();
+    if (pendingCheckinEmployeeName && normalizeName(employee.name) === normalizeName(pendingCheckinEmployeeName)) {
+      fillCheckinEmployee(employee);
+      pendingCheckinEmployeeName = '';
+      event.target.reset();
+      renderAll();
+      showPage('checkin', 'Check In');
+      alert('Data karyawan berhasil ditambahkan dan otomatis dipakai di form check in.');
+      return;
+    }
+    event.target.reset();
+    renderAll();
   });
 
   document.getElementById('checkinForm').addEventListener('submit', (event) => {
     event.preventDefault();
-    const roomId = guestRoom.value;
+    const roomId = document.getElementById('guestRoom').value;
     const room = state.rooms.find((item) => item.id === roomId);
-    const employee = findEmployeeByName(guestName.value);
-    if (!room || normalizeRoomStatus(room.status) !== 'bersih' || isRoomOccupied(room.id)) return alert('Kamar hanya bisa check in jika status bersih dan belum ditempati.');
+    const employee = findEmployeeByName(document.getElementById('guestName').value);
+    if (!roomId || !room) return alert('Tidak ada kamar bersih yang kosong.');
+    if (room.status !== 'bersih' || isRoomOccupied(roomId)) return alert('Kamar ini tidak bisa dipakai. Pilih kamar yang statusnya bersih dan kosong.');
     if (!employee) { handleGuestNameCheck(); return alert('Nama karyawan belum ada di database. Tambahkan karyawan dulu.'); }
-    const purpose = normalizeText(guestPurpose.value); addPurposeIfNew(purpose);
-    const guestData = { employeeId: employee.id, name: employee.name, nik: employee.nik, level: employee.level, position: employee.position, roomId, office: normalizeText(guestOffice.value), purpose, mealEligible: guestMealEligible.value, checkinDate: guestCheckinDate.value, checkoutDate: '', note: normalizeText(guestNote.value), status: 'In House', updatedAt: new Date().toISOString() };
-    if (editingGuestId) { const index = state.guests.findIndex((guest) => guest.id === editingGuestId); if (index >= 0) state.guests[index] = { ...state.guests[index], ...guestData }; editingGuestId = null; }
-    else state.guests.push({ id: crypto.randomUUID(), ...guestData, createdAt: new Date().toISOString() });
+
+    const purpose = normalizeText(document.getElementById('guestPurpose').value);
+    addPurposeIfNew(purpose);
+
+    const guestData = {
+      employeeId: employee.id,
+      name: employee.name,
+      nik: employee.nik,
+      level: employee.level,
+      position: employee.position,
+      roomId,
+      office: normalizeText(document.getElementById('guestOffice').value),
+      purpose,
+      mealEligible: document.getElementById('guestMealEligible').value,
+      checkinDate: document.getElementById('guestCheckinDate').value,
+      checkoutDate: '',
+      note: normalizeText(document.getElementById('guestNote').value),
+      status: 'In House',
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (editingGuestId) {
+      const index = state.guests.findIndex((guest) => guest.id === editingGuestId);
+      if (index >= 0) {
+        const oldRoom = state.rooms.find((item) => item.id === state.guests[index].roomId);
+        if (oldRoom && oldRoom.id !== roomId && oldRoom.status === 'terisi') oldRoom.status = 'kotor';
+        state.guests[index] = { ...state.guests[index], ...guestData };
+      }
+      editingGuestId = null;
+    } else {
+      state.guests.push({ id: crypto.randomUUID(), ...guestData, status: 'In House', createdAt: new Date().toISOString() });
+    }
+
     room.status = 'terisi';
-    saveData(STORAGE_KEYS.guests, state.guests); saveData(STORAGE_KEYS.rooms, state.rooms); event.target.reset(); setDefaultDates(); renderAll(); showPage('inhouse', 'In House');
+    saveData(STORAGE_KEYS.guests, state.guests);
+    saveData(STORAGE_KEYS.rooms, state.rooms);
+    event.target.reset();
+    setDefaultDates();
+    renderAll();
+    showPage('inhouse', 'In House');
   });
 
-  savePurposeBtn.addEventListener('click', () => { addPurposeIfNew(guestPurpose.value); renderPurposeOptions(); alert('Keperluan berhasil disimpan ke pilihan.'); });
-  mealQuickDate.addEventListener('change', renderMealQuickList); mealReportDate.addEventListener('change', renderMealReport); guestReportStatus.addEventListener('change', renderGuestReport);
-  guestName.addEventListener('input', handleGuestNameCheck); guestName.addEventListener('change', handleGuestNameCheck); goAddEmployeeBtn.addEventListener('click', goAddEmployeeFromCheckin);
-  roomFile.addEventListener('change', (event) => handleFileUpload(event, 'rooms')); employeeFile.addEventListener('change', (event) => handleFileUpload(event, 'employees'));
-  downloadRoomTemplate.addEventListener('click', () => downloadWorkbook('template-upload-kamar-mess.xlsx', roomTemplateRows(), 'Template Kamar'));
-  downloadRoomData.addEventListener('click', () => downloadWorkbook('data-kamar-mess.xlsx', roomExportRows(), 'Data Kamar'));
-  downloadEmployeeTemplate.addEventListener('click', () => downloadWorkbook('template-upload-karyawan-mess.xlsx', employeeTemplateRows(), 'Template Karyawan'));
-  downloadEmployeeData.addEventListener('click', () => downloadWorkbook('data-karyawan-mess.xlsx', employeeExportRows(), 'Data Karyawan'));
-  downloadGuestReport.addEventListener('click', () => downloadWorkbook('laporan-tamu-mess.xlsx', guestReportRows(), 'Laporan Tamu'));
+  document.getElementById('savePurposeBtn').addEventListener('click', () => {
+    addPurposeIfNew(document.getElementById('guestPurpose').value);
+    renderPurposeOptions();
+    alert('Keperluan berhasil disimpan ke pilihan.');
+  });
+
+  document.getElementById('mealQuickDate').addEventListener('change', renderMealQuickList);
+  document.getElementById('mealReportDate').addEventListener('change', renderMealReport);
+  document.getElementById('guestReportStatus').addEventListener('change', renderGuestReport);
+  document.getElementById('guestName').addEventListener('input', handleGuestNameCheck);
+  document.getElementById('guestName').addEventListener('change', handleGuestNameCheck);
+  document.getElementById('goAddEmployeeBtn').addEventListener('click', goAddEmployeeFromCheckin);
+  document.getElementById('roomFile').addEventListener('change', (event) => handleFileUpload(event, 'rooms'));
+  document.getElementById('employeeFile').addEventListener('change', (event) => handleFileUpload(event, 'employees'));
+  document.getElementById('downloadRoomTemplate').addEventListener('click', () => downloadWorkbook('template-upload-kamar-mess.xlsx', roomTemplateRows(), 'Template Kamar'));
+  document.getElementById('downloadRoomData').addEventListener('click', () => downloadWorkbook('data-kamar-mess.xlsx', roomExportRows(), 'Data Kamar'));
+  document.getElementById('downloadEmployeeTemplate').addEventListener('click', () => downloadWorkbook('template-upload-karyawan-mess.xlsx', employeeTemplateRows(), 'Template Karyawan'));
+  document.getElementById('downloadEmployeeData').addEventListener('click', () => downloadWorkbook('data-karyawan-mess.xlsx', employeeExportRows(), 'Data Karyawan'));
+  document.getElementById('downloadGuestReport').addEventListener('click', () => downloadWorkbook('laporan-tamu-mess.xlsx', guestReportRows(), 'Laporan Tamu'));
 }
 
-window.changeRoomStatus = function changeRoomStatus(roomId, status) {
-  const room = state.rooms.find((item) => item.id === roomId);
-  if (!room) return;
-  if (isRoomOccupied(roomId)) { renderAll(); return alert('Kamar masih ditempati. Check out penghuni dulu sebelum ubah status kamar.'); }
-  room.status = normalizeRoomStatus(status); saveData(STORAGE_KEYS.rooms, state.rooms); renderAll();
-};
-
 window.quickMeal = function quickMeal(guestId, type) {
-  const guest = state.guests.find((item) => item.id === guestId); if (!guest) return;
-  const date = mealQuickDate.value || todayIso();
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  const date = document.getElementById('mealQuickDate').value || todayIso();
   const duplicate = state.meals.some((meal) => meal.guestId === guestId && meal.date === date && meal.type === type);
   if (duplicate) return alert(`${guest.name} sudah absen makan ${type} pada tanggal ini.`);
   const room = getGuestRoom(guest);
   state.meals.push({ id: crypto.randomUUID(), guestId, guestName: guest.name, roomLabel: roomLabel(room), office: guest.office, type, date, time: currentTime(), createdAt: new Date().toISOString() });
-  saveData(STORAGE_KEYS.meals, state.meals); renderAll();
+  saveData(STORAGE_KEYS.meals, state.meals);
+  renderAll();
 };
 
 window.checkoutGuest = function checkoutGuest(guestId) {
-  const guest = state.guests.find((item) => item.id === guestId); if (!guest) return;
-  if (!confirm(`Check out ${guest.name} hari ini? Kamar otomatis menjadi kotor.`)) return;
-  guest.status = 'Check Out'; guest.checkoutDate = todayIso(); guest.updatedAt = new Date().toISOString();
-  const room = getGuestRoom(guest); if (room) room.status = 'kotor';
-  saveData(STORAGE_KEYS.guests, state.guests); saveData(STORAGE_KEYS.rooms, state.rooms); renderAll();
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  if (!confirm(`Check out ${guest.name} hari ini?`)) return;
+  const room = getGuestRoom(guest);
+  guest.status = 'Check Out';
+  guest.checkoutDate = todayIso();
+  guest.updatedAt = new Date().toISOString();
+  if (room && room.status === 'terisi') room.status = 'kotor';
+  saveData(STORAGE_KEYS.guests, state.guests);
+  saveData(STORAGE_KEYS.rooms, state.rooms);
+  renderAll();
 };
 
 window.updateGuestNote = function updateGuestNote(guestId) {
-  const guest = state.guests.find((item) => item.id === guestId); if (!guest) return;
-  const note = prompt(`Catatan untuk ${guest.name}`, guest.note || ''); if (note === null) return;
-  guest.note = normalizeText(note); saveData(STORAGE_KEYS.guests, state.guests); renderAll();
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  const note = prompt(`Catatan untuk ${guest.name}`, guest.note || '');
+  if (note === null) return;
+  guest.note = normalizeText(note);
+  saveData(STORAGE_KEYS.guests, state.guests);
+  renderAll();
 };
 
 window.editGuest = function editGuest(guestId) {
-  const guest = state.guests.find((item) => item.id === guestId); if (!guest) return;
-  editingGuestId = guest.id; fillCheckinEmployee({ name: guest.name, nik: guest.nik, level: guest.level, position: guest.position, office: guest.office });
-  guestPurpose.value = guest.purpose || ''; guestMealEligible.value = guest.mealEligible || 'Ya'; guestCheckinDate.value = guest.checkinDate || todayIso(); guestNote.value = guest.note || '';
-  renderRoomOptions(); const currentRoom = getGuestRoom(guest); const option = document.createElement('option'); option.value = guest.roomId; option.textContent = `${roomLabel(currentRoom)} - ${currentRoom?.type || ''} (current)`; guestRoom.prepend(option); guestRoom.value = guest.roomId; showPage('checkin', 'Edit In House');
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  editingGuestId = guest.id;
+  document.getElementById('guestName').value = guest.name;
+  document.getElementById('guestNik').value = guest.nik || '';
+  document.getElementById('guestLevel').value = guest.level || '';
+  document.getElementById('guestPosition').value = guest.position || '';
+  document.getElementById('guestOffice').value = guest.office || '';
+  document.getElementById('guestPurpose').value = guest.purpose || '';
+  document.getElementById('guestMealEligible').value = guest.mealEligible || 'Ya';
+  document.getElementById('guestCheckinDate').value = guest.checkinDate || todayIso();
+  document.getElementById('guestNote').value = guest.note || '';
+  renderRoomOptions();
+  const currentRoom = getGuestRoom(guest);
+  const currentRoomOption = document.createElement('option');
+  currentRoomOption.value = guest.roomId;
+  currentRoomOption.textContent = `${roomLabel(currentRoom)} - ${currentRoom?.type || ''} (current)`;
+  document.getElementById('guestRoom').prepend(currentRoomOption);
+  document.getElementById('guestRoom').value = guest.roomId;
+  showPage('checkin', 'Edit In House');
 };
 
 function handleGuestNameCheck() {
-  const name = normalizeText(guestName.value); const notice = newEmployeeNotice;
+  const name = normalizeText(document.getElementById('guestName').value);
+  const notice = document.getElementById('newEmployeeNotice');
   if (!name) return notice.classList.add('hidden');
   const employee = findEmployeeByName(name);
-  if (employee) { fillCheckinEmployee(employee); notice.classList.add('hidden'); return; }
-  guestNik.value = ''; guestLevel.value = ''; guestPosition.value = ''; notice.classList.remove('hidden');
+  if (employee) {
+    fillCheckinEmployee(employee);
+    notice.classList.add('hidden');
+    return;
+  }
+  document.getElementById('guestNik').value = '';
+  document.getElementById('guestLevel').value = '';
+  document.getElementById('guestPosition').value = '';
+  notice.classList.remove('hidden');
 }
 
-function fillCheckinEmployee(employee) { guestName.value = employee.name || ''; guestNik.value = employee.nik || ''; guestLevel.value = employee.level || ''; guestPosition.value = employee.position || ''; guestOffice.value = employee.office || ''; }
-function goAddEmployeeFromCheckin() { pendingCheckinEmployeeName = normalizeText(guestName.value); employeeName.value = pendingCheckinEmployeeName; employeeNik.value = normalizeText(guestNik.value); employeeOffice.value = normalizeText(guestOffice.value); showPage('employees', 'Database Karyawan'); employeeNik.focus(); }
+function fillCheckinEmployee(employee) {
+  document.getElementById('guestName').value = employee.name || '';
+  document.getElementById('guestNik').value = employee.nik || '';
+  document.getElementById('guestLevel').value = employee.level || '';
+  document.getElementById('guestPosition').value = employee.position || '';
+  document.getElementById('guestOffice').value = employee.office || '';
+}
 
-function roomTemplateRows() { return [{ room_no: '101', bed_code: 'A', capacity: 1, type: 'Sharing 6', status: 'bersih', floor: '1', building: 'Mess A', note: '' }, { room_no: '101', bed_code: 'B', capacity: 1, type: 'Sharing 6', status: 'bersih', floor: '1', building: 'Mess A', note: '' }, { room_no: '102', bed_code: '', capacity: 1, type: 'Single', status: 'bersih', floor: '1', building: 'Mess A', note: '' }, { room_no: '201', bed_code: 'A', capacity: 1, type: 'Sharing 3', status: 'bersih', floor: '2', building: 'Mess A', note: '' }]; }
-function employeeTemplateRows() { return [{ nama: 'Andi Saputra', nik: 'EMP001', jabatan: 'Staff', posisi: 'Cleaning Service Officer', office: 'Office Balikpapan', no_hp: '081234567890' }]; }
-function roomExportRows() { return state.rooms.map((room) => ({ room_no: room.roomNo, bed_code: room.bedCode || '', capacity: Number(room.capacity || 1), type: room.type || 'Single', status: normalizeRoomStatus(room.status), floor: room.floor || '', building: room.building || '', note: room.note || '' })); }
-function employeeExportRows() { return state.employees.map((employee) => ({ nama: employee.name, nik: employee.nik, jabatan: employee.level, posisi: employee.position, office: employee.office, no_hp: employee.phone || '' })); }
+function goAddEmployeeFromCheckin() {
+  const name = normalizeText(document.getElementById('guestName').value);
+  pendingCheckinEmployeeName = name;
+  document.getElementById('employeeName').value = name;
+  document.getElementById('employeeNik').value = normalizeText(document.getElementById('guestNik').value);
+  document.getElementById('employeeOffice').value = normalizeText(document.getElementById('guestOffice').value);
+  showPage('employees', 'Database Karyawan');
+  document.getElementById('employeeNik').focus();
+}
 
-function downloadWorkbook(filename, rows, sheetName) { if (!window.XLSX) return downloadCsv(filename.replace('.xlsx', '.csv'), rows); const worksheet = XLSX.utils.json_to_sheet(rows); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, sheetName); XLSX.writeFile(workbook, filename); }
-function downloadCsv(filename, rows) { const headers = Object.keys(rows[0] || {}); const csvRows = [headers.join(',')].concat(rows.map((row) => headers.map((header) => `"${String(row[header] || '').replaceAll('"', '""')}"`).join(','))); const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url); }
-function handleFileUpload(event, type) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const rows = file.name.toLowerCase().endsWith('.csv') ? parseCsv(String(reader.result)) : parseExcel(reader.result); if (type === 'rooms') importRooms(rows); if (type === 'employees') importEmployees(rows); event.target.value = ''; renderAll(); } catch (error) { console.error(error); alert('File gagal dibaca. Pastikan header sesuai template.'); } }; if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file); else reader.readAsArrayBuffer(file); }
-function parseExcel(arrayBuffer) { if (!window.XLSX) throw new Error('Library XLSX belum tersedia'); const workbook = XLSX.read(arrayBuffer, { type: 'array' }); const firstSheet = workbook.Sheets[workbook.SheetNames[0]]; return XLSX.utils.sheet_to_json(firstSheet, { defval: '' }); }
-function parseCsv(content) { const lines = content.split(/\r?\n/).map((line) => line.trim()).filter(Boolean); const headers = lines.shift().split(',').map((header) => normalizeText(header).replace(/^"|"$/g, '')); return lines.map((line) => { const values = line.split(',').map((value) => normalizeText(value).replace(/^"|"$/g, '')); return headers.reduce((row, header, index) => { row[header] = values[index] || ''; return row; }, {}); }); }
-function importRooms(rows) { let count = 0; rows.forEach((row) => { const roomNo = normalizeText(row.room_no || row.no_kamar || row.kamar); if (!roomNo) return; createOrUpdateRoom({ roomNo, bedCode: normalizeText(row.bed_code || row.kode_bed || row.bed).toUpperCase(), capacity: Number(row.capacity || row.kapasitas || 1), type: normalizeText(row.type || row.tipe || 'Single'), status: normalizeRoomStatus(row.status || 'bersih'), floor: normalizeText(row.floor || row.lantai), building: normalizeText(row.building || row.gedung), note: normalizeText(row.note || row.catatan) }); count += 1; }); saveData(STORAGE_KEYS.rooms, state.rooms); alert(`${count} data kamar berhasil diupload/update.`); }
-function importEmployees(rows) { let count = 0; rows.forEach((row) => { const name = normalizeText(row.nama || row.name || row.employee_name); const nik = normalizeText(row.nik || row.NIK); if (!name || !nik) return; createOrUpdateEmployee({ name, nik, level: normalizeText(row.jabatan || row.level || 'Staff'), position: normalizeText(row.posisi || row.position), office: normalizeText(row.office || row.nama_office), phone: normalizeText(row.no_hp || row.phone || row.nohp) }); count += 1; }); saveData(STORAGE_KEYS.employees, state.employees); alert(`${count} data karyawan berhasil diupload/update.`); }
-function setDefaultDates() { guestCheckinDate.value = todayIso(); mealQuickDate.value = todayIso(); mealReportDate.value = todayIso(); }
-function migrateLocalRoomStatuses() { state.rooms.forEach((room) => { room.status = normalizeRoomStatus(room.status); }); syncRoomStatusesFromGuests(); }
-function init() { todayText.textContent = formatDate(); state.purposes = Array.from(new Set([...DEFAULT_PURPOSES, ...state.purposes])); saveData(STORAGE_KEYS.purposes, state.purposes); migrateLocalRoomStatuses(); setDefaultDates(); renderNavigation(); bindForms(); renderAll(); }
+function roomTemplateRows() {
+  return [
+    { room_no: '101', bed_code: 'A', capacity: 1, type: 'Sharing 6', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
+    { room_no: '101', bed_code: 'B', capacity: 1, type: 'Sharing 6', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
+    { room_no: '102', bed_code: '', capacity: 1, type: 'Single', status: 'bersih', floor: '1', building: 'Mess A', note: '' },
+    { room_no: '201', bed_code: 'A', capacity: 1, type: 'Sharing 3', status: 'kotor', floor: '2', building: 'Mess A', note: '' },
+    { room_no: '301', bed_code: 'A', capacity: 1, type: 'Sharing 6', status: 'rusak', floor: '3', building: 'Mess A', note: 'AC rusak' },
+  ];
+}
+
+function employeeTemplateRows() {
+  return [
+    { nama: 'Andi Saputra', nik: 'EMP001', jabatan: 'Staff', posisi: 'Cleaning Service Officer', office: 'Office Balikpapan', no_hp: '081234567890' },
+    { nama: 'Budi Rahman', nik: 'EMP002', jabatan: 'Non Staff', posisi: 'Driver', office: 'Office Balikpapan', no_hp: '081234567891' },
+    { nama: 'Citra Dewi', nik: 'EMP003', jabatan: 'Manager', posisi: 'Area Manager', office: 'Office Samarinda', no_hp: '081234567892' },
+  ];
+}
+
+function roomExportRows() {
+  return state.rooms.map((room) => ({ room_no: room.roomNo, bed_code: room.bedCode || '', capacity: Number(room.capacity || 1), type: room.type || 'Single', status: room.status || 'bersih', floor: room.floor || '', building: room.building || '', note: room.note || '' }));
+}
+
+function employeeExportRows() {
+  return state.employees.map((employee) => ({ nama: employee.name, nik: employee.nik, jabatan: employee.level, posisi: employee.position, office: employee.office, no_hp: employee.phone || '' }));
+}
+
+function downloadWorkbook(filename, rows, sheetName) {
+  if (!window.XLSX) return downloadCsv(filename.replace('.xlsx', '.csv'), rows);
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.writeFile(workbook, filename);
+}
+
+function downloadCsv(filename, rows) {
+  const headers = Object.keys(rows[0] || {});
+  const csvRows = [headers.join(',')].concat(rows.map((row) => headers.map((header) => `"${String(row[header] || '').replaceAll('"', '""')}"`).join(',')));
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function handleFileUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const rows = file.name.toLowerCase().endsWith('.csv') ? parseCsv(String(reader.result)) : parseExcel(reader.result);
+      if (type === 'rooms') importRooms(rows);
+      if (type === 'employees') importEmployees(rows);
+      event.target.value = '';
+      renderAll();
+    } catch (error) {
+      console.error(error);
+      alert('File gagal dibaca. Pastikan header sesuai template.');
+    }
+  };
+  if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function parseExcel(arrayBuffer) {
+  if (!window.XLSX) throw new Error('Library XLSX belum tersedia');
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+}
+
+function parseCsv(content) {
+  const lines = content.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const headers = lines.shift().split(',').map((header) => normalizeText(header).replace(/^"|"$/g, ''));
+  return lines.map((line) => {
+    const values = line.split(',').map((value) => normalizeText(value).replace(/^"|"$/g, ''));
+    return headers.reduce((row, header, index) => { row[header] = values[index] || ''; return row; }, {});
+  });
+}
+
+function importRooms(rows) {
+  let count = 0;
+  rows.forEach((row) => {
+    const roomNo = normalizeText(row.room_no || row.no_kamar || row.kamar);
+    if (!roomNo) return;
+    const rawStatus = normalizeText(row.status || 'bersih').toLowerCase();
+    createOrUpdateRoom({
+      roomNo,
+      bedCode: normalizeText(row.bed_code || row.kode_bed || row.bed).toUpperCase(),
+      capacity: Number(row.capacity || row.kapasitas || 1),
+      type: normalizeText(row.type || row.tipe || 'Single'),
+      status: ROOM_STATUSES.includes(rawStatus) ? rawStatus : 'bersih',
+      floor: normalizeText(row.floor || row.lantai),
+      building: normalizeText(row.building || row.gedung),
+      note: normalizeText(row.note || row.catatan),
+    });
+    count += 1;
+  });
+  saveData(STORAGE_KEYS.rooms, state.rooms);
+  alert(`${count} data kamar berhasil diupload/update.`);
+}
+
+function importEmployees(rows) {
+  let count = 0;
+  rows.forEach((row) => {
+    const name = normalizeText(row.nama || row.name || row.employee_name);
+    const nik = normalizeText(row.nik || row.NIK);
+    if (!name || !nik) return;
+    createOrUpdateEmployee({ name, nik, level: normalizeText(row.jabatan || row.level || 'Staff'), position: normalizeText(row.posisi || row.position), office: normalizeText(row.office || row.nama_office), phone: normalizeText(row.no_hp || row.phone || row.nohp) });
+    count += 1;
+  });
+  saveData(STORAGE_KEYS.employees, state.employees);
+  alert(`${count} data karyawan berhasil diupload/update.`);
+}
+
+function setDefaultDates() {
+  document.getElementById('guestCheckinDate').value = todayIso();
+  document.getElementById('mealQuickDate').value = todayIso();
+  document.getElementById('mealReportDate').value = todayIso();
+}
+
+function init() {
+  document.getElementById('todayText').textContent = formatDate();
+  migrateOldRoomStatuses();
+  state.purposes = Array.from(new Set([...DEFAULT_PURPOSES, ...state.purposes]));
+  saveData(STORAGE_KEYS.purposes, state.purposes);
+  setDefaultDates();
+  renderNavigation();
+  bindForms();
+  renderAll();
+}
+
 init();
