@@ -34,29 +34,13 @@ function saveData(key, data) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-function normalizeText(value) {
-  return String(value || '').trim();
-}
-
-function normalizeName(value) {
-  return normalizeText(value).toLowerCase();
-}
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function currentTime() {
-  return new Date().toTimeString().slice(0, 5);
-}
+function normalizeText(value) { return String(value || '').trim(); }
+function normalizeName(value) { return normalizeText(value).toLowerCase(); }
+function todayIso() { return new Date().toISOString().slice(0, 10); }
+function currentTime() { return new Date().toTimeString().slice(0, 5); }
 
 function formatDate(date = new Date()) {
-  return new Intl.DateTimeFormat('id-ID', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+  return new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date);
 }
 
 function seedRooms() {
@@ -83,33 +67,14 @@ function migrateOldRoomStatuses() {
   if (changed) saveData(STORAGE_KEYS.rooms, state.rooms);
 }
 
-function roomLabel(room) {
-  return room?.bedCode ? `${room.roomNo}${room.bedCode}` : room?.roomNo || '-';
-}
-
-function getActiveGuests() {
-  return state.guests.filter((guest) => guest.status === 'In House');
-}
-
-function getGuestRoom(guest) {
-  return state.rooms.find((room) => room.id === guest.roomId);
-}
-
-function getRoomOccupant(roomId) {
-  return getActiveGuests().find((guest) => guest.roomId === roomId);
-}
-
-function isRoomOccupied(roomId) {
-  return Boolean(getRoomOccupant(roomId));
-}
-
-function getEmployeeById(id) {
-  return state.employees.find((employee) => employee.id === id);
-}
-
-function findEmployeeByName(name) {
-  return state.employees.find((employee) => normalizeName(employee.name) === normalizeName(name));
-}
+function roomLabel(room) { return room?.bedCode ? `${room.roomNo}${room.bedCode}` : room?.roomNo || '-'; }
+function getActiveGuests() { return state.guests.filter((guest) => guest.status === 'In House'); }
+function getGuestRoom(guest) { return state.rooms.find((room) => room.id === guest.roomId); }
+function getRoomOccupant(roomId) { return getActiveGuests().find((guest) => guest.roomId === roomId); }
+function isRoomOccupied(roomId) { return Boolean(getRoomOccupant(roomId)); }
+function getEmployeeById(id) { return state.employees.find((employee) => employee.id === id); }
+function findEmployeeByName(name) { return state.employees.find((employee) => normalizeName(employee.name) === normalizeName(name)); }
+function getCleanEmptyRooms(excludeRoomId = null) { return state.rooms.filter((room) => room.status === 'bersih' && !isRoomOccupied(room.id) && room.id !== excludeRoomId); }
 
 function nightsSince(checkinDate, checkoutDate = null) {
   if (!checkinDate) return 0;
@@ -118,14 +83,8 @@ function nightsSince(checkinDate, checkoutDate = null) {
   return Math.max(Math.floor((end - start) / 86400000) + 1, 1);
 }
 
-function emptyRow(colspan, text) {
-  return `<tr><td class="empty" colspan="${colspan}">${text}</td></tr>`;
-}
-
-function badge(text, type = 'ok') {
-  return `<span class="badge ${type}">${text}</span>`;
-}
-
+function emptyRow(colspan, text) { return `<tr><td class="empty" colspan="${colspan}">${text}</td></tr>`; }
+function badge(text, type = 'ok') { return `<span class="badge ${type}">${text}</span>`; }
 function roomStatusBadge(status) {
   const map = { bersih: 'ok', terisi: 'danger', kotor: 'warn', rusak: 'muted' };
   return badge(status || '-', map[status] || 'muted');
@@ -149,22 +108,14 @@ function renderNavigation() {
   });
 }
 
-function capitalize(value) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
+function capitalize(value) { return value.charAt(0).toUpperCase() + value.slice(1); }
 
 function syncRoomStatusWithGuests() {
   let changed = false;
   state.rooms.forEach((room) => {
     const occupied = isRoomOccupied(room.id);
-    if (occupied && room.status !== 'terisi') {
-      room.status = 'terisi';
-      changed = true;
-    }
-    if (!occupied && room.status === 'terisi') {
-      room.status = 'kotor';
-      changed = true;
-    }
+    if (occupied && room.status !== 'terisi') { room.status = 'terisi'; changed = true; }
+    if (!occupied && room.status === 'terisi') { room.status = 'kotor'; changed = true; }
   });
   if (changed) saveData(STORAGE_KEYS.rooms, state.rooms);
 }
@@ -180,7 +131,6 @@ function setRoomStatus(roomId, status) {
   saveData(STORAGE_KEYS.rooms, state.rooms);
   renderAll();
 }
-
 window.setRoomStatus = setRoomStatus;
 
 function addPurposeIfNew(value) {
@@ -198,7 +148,6 @@ function renderDashboard() {
   syncRoomStatusWithGuests();
   const counts = countRoomStatuses();
   const todaysMeals = state.meals.filter((meal) => meal.date === todayIso());
-
   document.getElementById('cleanRooms').textContent = counts.bersih;
   document.getElementById('occupiedRooms').textContent = counts.terisi;
   document.getElementById('dirtyRooms').textContent = counts.kotor;
@@ -208,9 +157,7 @@ function renderDashboard() {
     <div class="mini-status ok"><strong>${counts.bersih}</strong><span>Bersih</span></div>
     <div class="mini-status danger"><strong>${counts.terisi}</strong><span>Terisi</span></div>
     <div class="mini-status warn"><strong>${counts.kotor}</strong><span>Kotor</span></div>
-    <div class="mini-status muted"><strong>${counts.rusak}</strong><span>Rusak</span></div>
-  `;
-
+    <div class="mini-status muted"><strong>${counts.rusak}</strong><span>Rusak</span></div>`;
   document.getElementById('mealTodayCount').textContent = `${todaysMeals.length} absen`;
   document.getElementById('mealTodayTable').innerHTML = todaysMeals.length
     ? todaysMeals.slice(-10).reverse().map((meal) => `<tr><td>${meal.guestName}</td><td>${meal.type}</td><td>${meal.time}</td></tr>`).join('')
@@ -225,7 +172,7 @@ function countRoomStatuses() {
 }
 
 function renderRoomOptions() {
-  const cleanRooms = state.rooms.filter((room) => room.status === 'bersih' && !isRoomOccupied(room.id));
+  const cleanRooms = getCleanEmptyRooms();
   document.getElementById('guestRoom').innerHTML = cleanRooms.length
     ? cleanRooms.map((room) => `<option value="${room.id}">${roomLabel(room)} - ${room.type}</option>`).join('')
     : '<option value="">Tidak ada kamar bersih yang kosong</option>';
@@ -240,12 +187,7 @@ function renderRooms() {
   document.getElementById('roomOverviewGrid').innerHTML = state.rooms.length
     ? state.rooms.map((room) => {
       const occupant = getRoomOccupant(room.id);
-      return `
-        <article class="room-card ${room.status}">
-          <div class="room-card-head"><strong>${roomLabel(room)}</strong>${roomStatusBadge(room.status)}</div>
-          <p>${room.type} • ${room.building || '-'}</p>
-          <small>${occupant ? occupant.name : 'Kosong'}</small>
-        </article>`;
+      return `<article class="room-card ${room.status}"><div class="room-card-head"><strong>${roomLabel(room)}</strong>${roomStatusBadge(room.status)}</div><p>${room.type} • ${room.building || '-'}</p><small>${occupant ? occupant.name : 'Kosong'}</small></article>`;
     }).join('')
     : '<div class="empty-card">Belum ada data kamar.</div>';
 
@@ -253,32 +195,14 @@ function renderRooms() {
     ? state.rooms.map((room) => {
       const occupant = getRoomOccupant(room.id);
       const disabledClean = occupant ? 'disabled' : '';
-      return `
-        <tr>
-          <td>${roomLabel(room)}</td>
-          <td>${room.type}</td>
-          <td>${roomStatusBadge(room.status)}</td>
-          <td>${occupant ? occupant.name : '-'}</td>
-          <td>
-            <div class="table-actions">
-              <button class="mini-btn" ${disabledClean} onclick="setRoomStatus('${room.id}', 'bersih')">Bersih</button>
-              <button class="mini-btn" onclick="setRoomStatus('${room.id}', 'kotor')">Kotor</button>
-              <button class="mini-btn" onclick="setRoomStatus('${room.id}', 'rusak')">Rusak</button>
-            </div>
-          </td>
-        </tr>`;
+      return `<tr><td>${roomLabel(room)}</td><td>${room.type}</td><td>${roomStatusBadge(room.status)}</td><td>${occupant ? occupant.name : '-'}</td><td><div class="table-actions"><button class="mini-btn" ${disabledClean} onclick="setRoomStatus('${room.id}', 'bersih')">Bersih</button><button class="mini-btn" onclick="setRoomStatus('${room.id}', 'kotor')">Kotor</button><button class="mini-btn" onclick="setRoomStatus('${room.id}', 'rusak')">Rusak</button></div></td></tr>`;
     }).join('')
     : emptyRow(5, 'Belum ada data kamar');
 
   const brokenRooms = state.rooms.filter((room) => room.status === 'rusak');
   document.getElementById('brokenRoomCountText').textContent = `${brokenRooms.length} rusak`;
   document.getElementById('brokenRoomCards').innerHTML = brokenRooms.length
-    ? brokenRooms.map((room) => `
-      <article class="guest-card">
-        <div class="guest-card-head"><div><h3>${roomLabel(room)}</h3><p>${room.type} • ${room.building || '-'}</p></div>${roomStatusBadge(room.status)}</div>
-        <p class="note-text">${room.note || 'Belum ada catatan kerusakan.'}</p>
-        <div class="card-actions"><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}', 'kotor')">Jadikan Kotor</button><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}', 'bersih')">Sudah Bersih</button></div>
-      </article>`).join('')
+    ? brokenRooms.map((room) => `<article class="guest-card"><div class="guest-card-head"><div><h3>${roomLabel(room)}</h3><p>${room.type} • ${room.building || '-'}</p></div>${roomStatusBadge(room.status)}</div><p class="note-text">${room.note || 'Belum ada catatan kerusakan.'}</p><div class="card-actions"><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}', 'kotor')">Jadikan Kotor</button><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}', 'bersih')">Sudah Bersih</button></div></article>`).join('')
     : '<div class="empty-card">Tidak ada kamar rusak.</div>';
 }
 
@@ -297,20 +221,7 @@ function renderInhouseCards() {
     ? activeGuests.map((guest) => {
       const room = getGuestRoom(guest);
       const employee = getEmployeeById(guest.employeeId) || {};
-      return `
-        <article class="guest-card">
-          <div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge(guest.status, 'danger')}</div>
-          <div class="guest-info">
-            <span><b>Jabatan</b>${employee.level || guest.level || '-'}</span>
-            <span><b>Posisi</b>${employee.position || guest.position || '-'}</span>
-            <span><b>Tgl CI</b>${guest.checkinDate}</span>
-            <span><b>Lama Menginap</b>${nightsSince(guest.checkinDate)} hari</span>
-            <span><b>Keperluan</b>${guest.purpose}</span>
-            <span><b>Makan</b>${guest.mealEligible}</span>
-          </div>
-          ${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}
-          <div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div>
-        </article>`;
+      return `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge(guest.status, 'danger')}</div><div class="guest-info"><span><b>Jabatan</b>${employee.level || guest.level || '-'}</span><span><b>Posisi</b>${employee.position || guest.position || '-'}</span><span><b>Tgl CI</b>${guest.checkinDate}</span><span><b>Lama Menginap</b>${nightsSince(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose}</span><span><b>Makan</b>${guest.mealEligible}</span></div>${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}<div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="moveGuestRoom('${guest.id}')">Pindah Kamar</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`;
     }).join('')
     : '<div class="empty-card">Belum ada penghuni In House.</div>';
 }
@@ -342,21 +253,7 @@ function guestReportRows() {
   return state.guests.filter((guest) => filter === 'all' || guest.status === filter).map((guest) => {
     const room = getGuestRoom(guest);
     const employee = getEmployeeById(guest.employeeId) || {};
-    return {
-      status: guest.status,
-      nama: guest.name,
-      nik: guest.nik || employee.nik || '',
-      jabatan: employee.level || guest.level || '',
-      posisi: employee.position || guest.position || '',
-      kamar: roomLabel(room),
-      office: guest.office,
-      keperluan: guest.purpose,
-      dapat_makan: guest.mealEligible,
-      tanggal_ci: guest.checkinDate,
-      tanggal_co: guest.checkoutDate || '',
-      lama_menginap: `${nightsSince(guest.checkinDate, guest.checkoutDate)} hari`,
-      catatan: guest.note || '',
-    };
+    return { status: guest.status, nama: guest.name, nik: guest.nik || employee.nik || '', jabatan: employee.level || guest.level || '', posisi: employee.position || guest.position || '', kamar: roomLabel(room), office: guest.office, keperluan: guest.purpose, dapat_makan: guest.mealEligible, tanggal_ci: guest.checkinDate, tanggal_co: guest.checkoutDate || '', lama_menginap: `${nightsSince(guest.checkinDate, guest.checkoutDate)} hari`, catatan: guest.note || '' };
   });
 }
 
@@ -383,10 +280,7 @@ function renderAll() {
 
 function createOrUpdateEmployee(employee) {
   const existingIndex = state.employees.findIndex((item) => normalizeText(item.nik) === normalizeText(employee.nik) || normalizeName(item.name) === normalizeName(employee.name));
-  if (existingIndex >= 0) {
-    state.employees[existingIndex] = { ...state.employees[existingIndex], ...employee };
-    return state.employees[existingIndex];
-  }
+  if (existingIndex >= 0) { state.employees[existingIndex] = { ...state.employees[existingIndex], ...employee }; return state.employees[existingIndex]; }
   const newEmployee = { id: crypto.randomUUID(), ...employee };
   state.employees.push(newEmployee);
   return newEmployee;
@@ -394,10 +288,7 @@ function createOrUpdateEmployee(employee) {
 
 function createOrUpdateRoom(room) {
   const existingIndex = state.rooms.findIndex((item) => normalizeText(item.roomNo) === normalizeText(room.roomNo) && normalizeText(item.bedCode).toUpperCase() === normalizeText(room.bedCode).toUpperCase());
-  if (existingIndex >= 0) {
-    state.rooms[existingIndex] = { ...state.rooms[existingIndex], ...room };
-    return state.rooms[existingIndex];
-  }
+  if (existingIndex >= 0) { state.rooms[existingIndex] = { ...state.rooms[existingIndex], ...room }; return state.rooms[existingIndex]; }
   const newRoom = { id: crypto.randomUUID(), ...room };
   state.rooms.push(newRoom);
   return newRoom;
@@ -406,16 +297,7 @@ function createOrUpdateRoom(room) {
 function bindForms() {
   document.getElementById('roomForm').addEventListener('submit', (event) => {
     event.preventDefault();
-    createOrUpdateRoom({
-      roomNo: normalizeText(document.getElementById('roomNo').value),
-      bedCode: normalizeText(document.getElementById('bedCode').value).toUpperCase(),
-      capacity: Number(document.getElementById('roomCapacity').value || 1),
-      type: document.getElementById('roomType').value,
-      status: document.getElementById('roomStatus').value,
-      floor: '',
-      building: normalizeText(document.getElementById('roomBuilding').value),
-      note: '',
-    });
+    createOrUpdateRoom({ roomNo: normalizeText(document.getElementById('roomNo').value), bedCode: normalizeText(document.getElementById('bedCode').value).toUpperCase(), capacity: Number(document.getElementById('roomCapacity').value || 1), type: document.getElementById('roomType').value, status: document.getElementById('roomStatus').value, floor: '', building: normalizeText(document.getElementById('roomBuilding').value), note: '' });
     saveData(STORAGE_KEYS.rooms, state.rooms);
     event.target.reset();
     document.getElementById('roomCapacity').value = 1;
@@ -424,14 +306,7 @@ function bindForms() {
 
   document.getElementById('employeeForm').addEventListener('submit', (event) => {
     event.preventDefault();
-    const employee = createOrUpdateEmployee({
-      name: normalizeText(document.getElementById('employeeName').value),
-      nik: normalizeText(document.getElementById('employeeNik').value),
-      level: document.getElementById('employeeLevel').value,
-      position: normalizeText(document.getElementById('employeePosition').value),
-      office: normalizeText(document.getElementById('employeeOffice').value),
-      phone: normalizeText(document.getElementById('employeePhone').value),
-    });
+    const employee = createOrUpdateEmployee({ name: normalizeText(document.getElementById('employeeName').value), nik: normalizeText(document.getElementById('employeeNik').value), level: document.getElementById('employeeLevel').value, position: normalizeText(document.getElementById('employeePosition').value), office: normalizeText(document.getElementById('employeeOffice').value), phone: normalizeText(document.getElementById('employeePhone').value) });
     saveData(STORAGE_KEYS.employees, state.employees);
     if (pendingCheckinEmployeeName && normalizeName(employee.name) === normalizeName(pendingCheckinEmployeeName)) {
       fillCheckinEmployee(employee);
@@ -457,23 +332,7 @@ function bindForms() {
 
     const purpose = normalizeText(document.getElementById('guestPurpose').value);
     addPurposeIfNew(purpose);
-
-    const guestData = {
-      employeeId: employee.id,
-      name: employee.name,
-      nik: employee.nik,
-      level: employee.level,
-      position: employee.position,
-      roomId,
-      office: normalizeText(document.getElementById('guestOffice').value),
-      purpose,
-      mealEligible: document.getElementById('guestMealEligible').value,
-      checkinDate: document.getElementById('guestCheckinDate').value,
-      checkoutDate: '',
-      note: normalizeText(document.getElementById('guestNote').value),
-      status: 'In House',
-      updatedAt: new Date().toISOString(),
-    };
+    const guestData = { employeeId: employee.id, name: employee.name, nik: employee.nik, level: employee.level, position: employee.position, roomId, office: normalizeText(document.getElementById('guestOffice').value), purpose, mealEligible: document.getElementById('guestMealEligible').value, checkinDate: document.getElementById('guestCheckinDate').value, checkoutDate: '', note: normalizeText(document.getElementById('guestNote').value), status: 'In House', updatedAt: new Date().toISOString() };
 
     if (editingGuestId) {
       const index = state.guests.findIndex((guest) => guest.id === editingGuestId);
@@ -486,7 +345,6 @@ function bindForms() {
     } else {
       state.guests.push({ id: crypto.randomUUID(), ...guestData, status: 'In House', createdAt: new Date().toISOString() });
     }
-
     room.status = 'terisi';
     saveData(STORAGE_KEYS.guests, state.guests);
     saveData(STORAGE_KEYS.rooms, state.rooms);
@@ -496,12 +354,7 @@ function bindForms() {
     showPage('inhouse', 'In House');
   });
 
-  document.getElementById('savePurposeBtn').addEventListener('click', () => {
-    addPurposeIfNew(document.getElementById('guestPurpose').value);
-    renderPurposeOptions();
-    alert('Keperluan berhasil disimpan ke pilihan.');
-  });
-
+  document.getElementById('savePurposeBtn').addEventListener('click', () => { addPurposeIfNew(document.getElementById('guestPurpose').value); renderPurposeOptions(); alert('Keperluan berhasil disimpan ke pilihan.'); });
   document.getElementById('mealQuickDate').addEventListener('change', renderMealQuickList);
   document.getElementById('mealReportDate').addEventListener('change', renderMealReport);
   document.getElementById('guestReportStatus').addEventListener('change', renderGuestReport);
@@ -516,6 +369,33 @@ function bindForms() {
   document.getElementById('downloadEmployeeData').addEventListener('click', () => downloadWorkbook('data-karyawan-mess.xlsx', employeeExportRows(), 'Data Karyawan'));
   document.getElementById('downloadGuestReport').addEventListener('click', () => downloadWorkbook('laporan-tamu-mess.xlsx', guestReportRows(), 'Laporan Tamu'));
 }
+
+window.moveGuestRoom = function moveGuestRoom(guestId) {
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  const currentRoom = getGuestRoom(guest);
+  const availableRooms = getCleanEmptyRooms(guest.roomId);
+  if (!availableRooms.length) return alert('Tidak ada kamar bersih yang kosong untuk pindah kamar.');
+
+  const roomList = availableRooms.map((room, index) => `${index + 1}. ${roomLabel(room)} - ${room.type}`).join('\n');
+  const choice = prompt(`Pilih nomor kamar baru untuk ${guest.name}:\n\n${roomList}`);
+  if (choice === null) return;
+
+  const selectedIndex = Number(choice) - 1;
+  const newRoom = availableRooms[selectedIndex];
+  if (!newRoom) return alert('Pilihan kamar tidak valid.');
+  if (newRoom.status !== 'bersih' || isRoomOccupied(newRoom.id)) return alert('Kamar baru harus bersih dan kosong.');
+
+  if (currentRoom && currentRoom.status === 'terisi') currentRoom.status = 'kotor';
+  guest.roomId = newRoom.id;
+  guest.updatedAt = new Date().toISOString();
+  newRoom.status = 'terisi';
+
+  saveData(STORAGE_KEYS.guests, state.guests);
+  saveData(STORAGE_KEYS.rooms, state.rooms);
+  renderAll();
+  alert(`${guest.name} berhasil pindah dari ${roomLabel(currentRoom)} ke ${roomLabel(newRoom)}. Kamar lama menjadi kotor.`);
+};
 
 window.quickMeal = function quickMeal(guestId, type) {
   const guest = state.guests.find((item) => item.id === guestId);
@@ -581,11 +461,7 @@ function handleGuestNameCheck() {
   const notice = document.getElementById('newEmployeeNotice');
   if (!name) return notice.classList.add('hidden');
   const employee = findEmployeeByName(name);
-  if (employee) {
-    fillCheckinEmployee(employee);
-    notice.classList.add('hidden');
-    return;
-  }
+  if (employee) { fillCheckinEmployee(employee); notice.classList.add('hidden'); return; }
   document.getElementById('guestNik').value = '';
   document.getElementById('guestLevel').value = '';
   document.getElementById('guestPosition').value = '';
@@ -628,13 +504,8 @@ function employeeTemplateRows() {
   ];
 }
 
-function roomExportRows() {
-  return state.rooms.map((room) => ({ room_no: room.roomNo, bed_code: room.bedCode || '', capacity: Number(room.capacity || 1), type: room.type || 'Single', status: room.status || 'bersih', floor: room.floor || '', building: room.building || '', note: room.note || '' }));
-}
-
-function employeeExportRows() {
-  return state.employees.map((employee) => ({ nama: employee.name, nik: employee.nik, jabatan: employee.level, posisi: employee.position, office: employee.office, no_hp: employee.phone || '' }));
-}
+function roomExportRows() { return state.rooms.map((room) => ({ room_no: room.roomNo, bed_code: room.bedCode || '', capacity: Number(room.capacity || 1), type: room.type || 'Single', status: room.status || 'bersih', floor: room.floor || '', building: room.building || '', note: room.note || '' })); }
+function employeeExportRows() { return state.employees.map((employee) => ({ nama: employee.name, nik: employee.nik, jabatan: employee.level, posisi: employee.position, office: employee.office, no_hp: employee.phone || '' })); }
 
 function downloadWorkbook(filename, rows, sheetName) {
   if (!window.XLSX) return downloadCsv(filename.replace('.xlsx', '.csv'), rows);
@@ -698,16 +569,7 @@ function importRooms(rows) {
     const roomNo = normalizeText(row.room_no || row.no_kamar || row.kamar);
     if (!roomNo) return;
     const rawStatus = normalizeText(row.status || 'bersih').toLowerCase();
-    createOrUpdateRoom({
-      roomNo,
-      bedCode: normalizeText(row.bed_code || row.kode_bed || row.bed).toUpperCase(),
-      capacity: Number(row.capacity || row.kapasitas || 1),
-      type: normalizeText(row.type || row.tipe || 'Single'),
-      status: ROOM_STATUSES.includes(rawStatus) ? rawStatus : 'bersih',
-      floor: normalizeText(row.floor || row.lantai),
-      building: normalizeText(row.building || row.gedung),
-      note: normalizeText(row.note || row.catatan),
-    });
+    createOrUpdateRoom({ roomNo, bedCode: normalizeText(row.bed_code || row.kode_bed || row.bed).toUpperCase(), capacity: Number(row.capacity || row.kapasitas || 1), type: normalizeText(row.type || row.tipe || 'Single'), status: ROOM_STATUSES.includes(rawStatus) ? rawStatus : 'bersih', floor: normalizeText(row.floor || row.lantai), building: normalizeText(row.building || row.gedung), note: normalizeText(row.note || row.catatan) });
     count += 1;
   });
   saveData(STORAGE_KEYS.rooms, state.rooms);
