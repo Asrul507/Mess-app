@@ -19,11 +19,12 @@
     <nav class="nav">
       <button class="nav-btn active" data-page="dashboard">Dashboard</button>
       <button class="nav-btn" data-page="checkin">Check In</button>
+      <button class="nav-btn" data-page="inhouse">In House</button>
       <button class="nav-btn" data-page="rooms">Data Kamar</button>
       <button class="nav-btn" data-page="employees">Database Karyawan</button>
       <button class="nav-btn" data-page="meal">Absen Makan</button>
       <button class="nav-btn" data-page="meal-report">Rekap Makan</button>
-      <button class="nav-btn" data-page="guest-report">Rekap Penghuni</button>
+      <button class="nav-btn" data-page="guest-report">Laporan Tamu</button>
     </nav>
   </aside>
 
@@ -38,21 +39,16 @@
 
     <section id="dashboard" class="page active">
       <div class="grid cards">
-        <article class="card stat-card"><p>Total Kamar</p><strong id="totalRooms">0</strong></article>
-        <article class="card stat-card"><p>Kapasitas Bed</p><strong id="totalBeds">0</strong></article>
-        <article class="card stat-card"><p>Terisi</p><strong id="occupiedBeds">0</strong></article>
-        <article class="card stat-card"><p>Kosong</p><strong id="availableBeds">0</strong></article>
+        <article class="card stat-card"><p>Total Kamar/Bed</p><strong id="totalRooms">0</strong></article>
+        <article class="card stat-card"><p>Available</p><strong id="availableBeds">0</strong></article>
+        <article class="card stat-card"><p>Occupied</p><strong id="occupiedBeds">0</strong></article>
+        <article class="card stat-card"><p>Maintenance</p><strong id="maintenanceBeds">0</strong></article>
       </div>
 
       <div class="grid two-col">
         <article class="card">
-          <div class="section-title"><h3>Penghuni Aktif</h3><span id="activeGuestCount">0 orang</span></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Nama</th><th>Kamar/Bed</th><th>Office</th><th>Makan</th></tr></thead>
-              <tbody id="activeGuestTable"></tbody>
-            </table>
-          </div>
+          <div class="section-title"><h3>Status Kamar</h3><span id="roomStatusText">0 data</span></div>
+          <div class="status-grid" id="roomStatusCards"></div>
         </article>
 
         <article class="card">
@@ -72,7 +68,7 @@
         <div class="section-title">
           <div>
             <h3>Input Check In</h3>
-            <p>Kalau nama belum ada di database karyawan, klik tombol tambah karyawan baru.</p>
+            <p>Nama wajib terdaftar. Kalau belum ada, klik tambah karyawan baru.</p>
           </div>
         </div>
 
@@ -83,65 +79,76 @@
           <div class="helper-box full hidden" id="newEmployeeNotice">
             <div>
               <strong>Nama ini belum ada di database karyawan.</strong>
-              <p>Klik tombol di samping untuk isi data karyawan. Setelah disimpan, nama otomatis dipakai untuk check in.</p>
+              <p>Klik tombol untuk isi data karyawan. Setelah disimpan, otomatis dipakai untuk check in.</p>
             </div>
             <button class="secondary-btn no-margin" type="button" id="goAddEmployeeBtn">+ Tambah Karyawan Baru</button>
           </div>
-          <label>NIK
-            <input id="guestNik" placeholder="NIK karyawan" />
-          </label>
-          <label>Kamar / Bed
-            <select required id="guestRoom"></select>
-          </label>
-          <label>Office
-            <input required id="guestOffice" placeholder="Contoh: Office Balikpapan" />
-          </label>
+          <label>NIK<input id="guestNik" placeholder="NIK karyawan" readonly /></label>
+          <label>Jabatan<input id="guestLevel" placeholder="Jabatan" readonly /></label>
+          <label>Posisi<input id="guestPosition" placeholder="Posisi" readonly /></label>
+          <label>Office<input required id="guestOffice" placeholder="Contoh: Office Balikpapan" /></label>
+          <label>Kamar / Bed<select required id="guestRoom"></select></label>
           <label>Keperluan
-            <select required id="guestPurpose">
-              <option value="Dinas">Dinas</option>
-              <option value="Training">Training</option>
-              <option value="Rolling/Mutasi">Rolling/Mutasi</option>
-              <option value="Tamu Perusahaan">Tamu Perusahaan</option>
-              <option value="Lainnya">Lainnya</option>
-            </select>
+            <div class="input-with-action">
+              <input required id="guestPurpose" list="purposeOptions" placeholder="Pilih/ketik keperluan" />
+              <button type="button" class="mini-btn" id="savePurposeBtn">Simpan</button>
+            </div>
           </label>
           <label>Dapat Makan?
-            <select required id="guestMealEligible">
-              <option value="Ya">Ya</option>
-              <option value="Tidak">Tidak</option>
-            </select>
+            <select required id="guestMealEligible"><option value="Ya">Ya</option><option value="Tidak">Tidak</option></select>
           </label>
-          <label>Tanggal Check In
-            <input required type="date" id="guestCheckinDate" />
-          </label>
-          <label>Estimasi Check Out
-            <input type="date" id="guestCheckoutPlan" />
-          </label>
-          <label class="full">Catatan
-            <textarea id="guestNote" placeholder="Catatan tambahan jika ada"></textarea>
-          </label>
+          <label>Tanggal Check In<input required type="date" id="guestCheckinDate" /></label>
+          <label class="full">Catatan<textarea id="guestNote" placeholder="Catatan tambahan jika ada"></textarea></label>
           <button class="primary-btn" type="submit">Simpan Check In</button>
         </form>
+      </article>
+    </section>
+
+    <section id="inhouse" class="page">
+      <article class="card">
+        <div class="section-title">
+          <div>
+            <h3>In House</h3>
+            <p>Card per penghuni dengan aksi edit, check out, dan catatan.</p>
+          </div>
+          <span id="inhouseCountText">0 orang</span>
+        </div>
+        <div class="guest-card-grid" id="inhouseCards"></div>
       </article>
     </section>
 
     <section id="rooms" class="page">
       <div class="grid two-col">
         <article class="card form-card">
-          <div class="section-title"><div><h3>Tambah Kamar/Bed</h3><p>Contoh sharing: 101A, 101B, 101C, 101D. Kamar sendiri: 102.</p></div></div>
+          <div class="section-title"><div><h3>Tambah Kamar/Bed</h3><p>Sharing bisa 2, 3, 4, 6, atau Dormitory.</p></div></div>
           <form id="roomForm" class="form-grid compact">
             <label>No Kamar<input required id="roomNo" placeholder="101" /></label>
             <label>Kode Bed<input id="bedCode" placeholder="A / B / C / kosong jika sendiri" /></label>
             <label>Kapasitas<input required type="number" min="1" value="1" id="roomCapacity" /></label>
             <label>Tipe
-              <select id="roomType"><option value="Single">Single</option><option value="Sharing 2">Sharing 2</option><option value="Sharing 4">Sharing 4</option><option value="Dormitory">Dormitory</option></select>
+              <select id="roomType">
+                <option value="Single">Single</option>
+                <option value="Sharing 2">Sharing 2</option>
+                <option value="Sharing 3">Sharing 3</option>
+                <option value="Sharing 4">Sharing 4</option>
+                <option value="Sharing 6">Sharing 6</option>
+                <option value="Dormitory">Dormitory</option>
+              </select>
             </label>
-            <button class="primary-btn" type="submit">Tambah Kamar</button>
+            <label>Status
+              <select id="roomStatus">
+                <option value="available">Available</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </label>
+            <label>Gedung<input id="roomBuilding" placeholder="Mess A" /></label>
+            <button class="primary-btn" type="submit">Tambah/Update Kamar</button>
           </form>
         </article>
 
         <article class="card form-card">
-          <div class="section-title"><div><h3>Upload/Download Excel Kamar</h3><p>Upload file `.xlsx` atau `.csv`. Header: room_no, bed_code, capacity, type, floor, building, note.</p></div></div>
+          <div class="section-title"><div><h3>Upload/Download Excel Kamar</h3><p>Header: room_no, bed_code, capacity, type, status, floor, building, note.</p></div></div>
           <input type="file" id="roomFile" accept=".xlsx,.xls,.csv" />
           <div class="button-row">
             <button class="secondary-btn" id="downloadRoomTemplate" type="button">Download Template Excel</button>
@@ -174,7 +181,7 @@
         </article>
 
         <article class="card form-card">
-          <div class="section-title"><div><h3>Upload/Download Excel Karyawan</h3><p>Upload file `.xlsx` atau `.csv`. Header: nama, nik, jabatan, posisi, office, no_hp.</p></div></div>
+          <div class="section-title"><div><h3>Upload/Download Excel Karyawan</h3><p>Header: nama, nik, jabatan, posisi, office, no_hp.</p></div></div>
           <input type="file" id="employeeFile" accept=".xlsx,.xls,.csv" />
           <div class="button-row">
             <button class="secondary-btn" id="downloadEmployeeTemplate" type="button">Download Template Excel</button>
@@ -190,15 +197,12 @@
     </section>
 
     <section id="meal" class="page">
-      <article class="card form-card">
-        <div class="section-title"><div><h3>Absen Makan</h3><p>Hanya penghuni dengan status dapat makan = Ya yang idealnya boleh absen.</p></div></div>
-        <form id="mealForm" class="form-grid compact">
-          <label>Penghuni<select required id="mealGuest"></select></label>
-          <label>Jenis Makan<select required id="mealType"><option value="Pagi">Pagi</option><option value="Siang">Siang</option><option value="Malam">Malam</option></select></label>
-          <label>Tanggal<input required type="date" id="mealDate" /></label>
-          <label>Jam<input required type="time" id="mealTime" /></label>
-          <button class="primary-btn" type="submit">Simpan Absen Makan</button>
-        </form>
+      <article class="card">
+        <div class="section-title">
+          <div><h3>Absen Makan Cepat</h3><p>Klik tombol Pagi, Siang, atau Malam. Data langsung masuk rekap makan.</p></div>
+          <input type="date" id="mealQuickDate" />
+        </div>
+        <div class="meal-list" id="mealQuickList"></div>
       </article>
     </section>
 
@@ -211,13 +215,20 @@
 
     <section id="guest-report" class="page">
       <article class="card">
-        <div class="section-title"><div><h3>Rekap Penghuni Mess</h3><p>Konsepnya mirip in-house hotel, tapi untuk penghuni mess karyawan.</p></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>NIK</th><th>Kamar/Bed</th><th>Office</th><th>Keperluan</th><th>Dapat Makan</th><th>Check In</th><th>Plan CO</th></tr></thead><tbody id="guestReportTable"></tbody></table></div>
+        <div class="section-title">
+          <div><h3>Laporan Tamu</h3><p>Data tamu/karyawan yang CI, In House, dan Check Out.</p></div>
+          <div class="report-actions">
+            <select id="guestReportStatus"><option value="all">Semua Status</option><option value="CI">CI</option><option value="In House">In House</option><option value="Check Out">Check Out</option></select>
+            <button class="secondary-btn no-margin" id="downloadGuestReport" type="button">Download Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Status</th><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Kamar/Bed</th><th>Office</th><th>Keperluan</th><th>Dapat Makan</th><th>Tanggal CI</th><th>Tanggal CO</th><th>Lama Menginap</th></tr></thead><tbody id="guestReportTable"></tbody></table></div>
       </article>
     </section>
   </main>
 
   <datalist id="employeeNames"></datalist>
+  <datalist id="purposeOptions"></datalist>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
