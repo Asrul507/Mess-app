@@ -10,6 +10,10 @@ function initNavigation() {
   document.querySelectorAll('[data-quick-page]').forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
   });
+  $('backBtn')?.addEventListener('click', goBackPage);
+  document.querySelectorAll('[data-quick-page]').forEach((button) => {
+    button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
+  });
 }
 
 function initApp() {
