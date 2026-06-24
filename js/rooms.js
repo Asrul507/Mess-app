@@ -266,6 +266,15 @@ function renderRooms() {
   if ($('brokenRoomCards')) $('brokenRoomCards').innerHTML = brokenRooms.length ? brokenRooms.map((room) => `<div class="guest-card"><div class="guest-card-head"><div><h3>${roomLabel(room)}</h3><p>${room.type}</p></div>${statusBadge(room.status)}</div><p class="note-text">Tidak tampil di pilihan check in.</p><div class="card-actions"><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}','kotor')">Set Kotor</button><button class="primary-btn" onclick="setRoomStatus('${room.id}','bersih')">Set Bersih</button></div></div>`).join('') : '<div class="empty-card">Tidak ada kamar rusak.</div>';
 }
 
+
+function openRoomTab(tabName = 'overview') {
+  currentRoomTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach((item) => item.classList.toggle('active', item.dataset.roomTab === tabName));
+  document.querySelectorAll('.room-tab').forEach((tab) => tab.classList.remove('active'));
+  const targetTab = $(`roomTab${tabName[0].toUpperCase()}${tabName.slice(1)}`);
+  if (targetTab) targetTab.classList.add('active');
+}
+
 function initRoomsMenu() {
   prepareRoomMenuUi();
   if ($('roomType')) $('roomType').disabled = true;
@@ -301,11 +310,7 @@ function initRoomsMenu() {
   $('downloadRoomData') && $('downloadRoomData').addEventListener('click', () => downloadWorkbook('data-kamar-mess.xlsx', roomExportRows(), 'Data Kamar'));
   document.querySelectorAll('.tab-btn').forEach((button) => {
     button.addEventListener('click', () => {
-      currentRoomTab = button.dataset.roomTab;
-      document.querySelectorAll('.tab-btn').forEach((item) => item.classList.toggle('active', item === button));
-      document.querySelectorAll('.room-tab').forEach((tab) => tab.classList.remove('active'));
-      const targetTab = $(`roomTab${currentRoomTab[0].toUpperCase()}${currentRoomTab.slice(1)}`);
-      if (targetTab) targetTab.classList.add('active');
+      openRoomTab(button.dataset.roomTab);
     });
   });
   updateRoomPreview();

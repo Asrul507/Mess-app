@@ -1,6 +1,14 @@
 function initNavigation() {
   document.querySelectorAll('.nav-btn').forEach((button) => {
-    button.addEventListener('click', () => showPage(button.dataset.page, button.textContent));
+    button.addEventListener('click', () => {
+      showPage(button.dataset.page, button.textContent);
+      document.querySelectorAll('.nav-btn').forEach((item) => item.classList.toggle('active', item === button));
+      if (button.dataset.roomOpen && typeof openRoomTab === 'function') openRoomTab(button.dataset.roomOpen);
+    });
+  });
+  $('backBtn')?.addEventListener('click', goBackPage);
+  document.querySelectorAll('[data-quick-page]').forEach((button) => {
+    button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
   });
   $('backBtn')?.addEventListener('click', goBackPage);
   document.querySelectorAll('[data-quick-page]').forEach((button) => {

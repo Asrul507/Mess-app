@@ -29,8 +29,14 @@ function handleGuestNameCheck() {
   }
 
   const employee = findEmployeeByName(name);
+  if (notice) notice.querySelector('strong').textContent = 'Nama ini belum ada.';
   if (employee) {
     fillCheckinEmployee(employee);
+    if (!isEmployeeActive(employee)) {
+      notice?.classList.remove('hidden');
+      if (notice) notice.querySelector('strong').textContent = 'Karyawan tidak aktif/blacklist.';
+      return;
+    }
     notice?.classList.add('hidden');
     return;
   }
@@ -54,6 +60,8 @@ function renderCheckin() {
   renderPurposeOptions();
   renderRoomOptions();
   handleGuestNameCheck();
+  renderCheckinReport();
+  renderCheckoutMenu();
 }
 
 function renderInhouse() {
@@ -119,9 +127,40 @@ async function checkoutGuest(guestId) {
   renderAll();
 }
 
+
+function renderCheckinReport() {
+  const date = $('checkinReportDate')?.value || todayIso();
+  const rows = state.guests.filter((guest) => guest.checkinDate === date);
+  if ($('checkinReportTable')) {
+    $('checkinReportTable').innerHTML = rows.length
+      ? rows.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.purpose || '-'}</td><td>${guest.checkinDate}</td><td>${badge(guest.status, guest.status === 'In House' ? 'danger' : 'ok')}</td></tr>`).join('')
+      : emptyRow(6, 'Tidak ada data check in pada tanggal ini');
+  }
+}
+
+function renderCheckoutMenu() {
+  const active = activeGuests();
+  if ($('checkoutCards')) {
+    $('checkoutCards').innerHTML = active.length
+      ? active.map((guest) => `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(roomOfGuest(guest))} • ${guest.office || '-'}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>CI</b>${guest.checkinDate}</span><span><b>Lama</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose || '-'}</span><span><b>Makan</b>${guest.mealEligible || '-'}</span></div><div class="card-actions"><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`).join('')
+      : '<div class="empty-card">Tidak ada penghuni yang bisa checkout.</div>';
+  }
+  const date = $('checkoutReportDate')?.value || todayIso();
+  const checkedOut = state.guests.filter((guest) => guest.status === 'Check Out' && guest.checkoutDate === date);
+  if ($('checkoutCountText')) $('checkoutCountText').textContent = `${checkedOut.length} data`;
+  if ($('checkoutReportTable')) {
+    $('checkoutReportTable').innerHTML = checkedOut.length
+      ? checkedOut.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.checkinDate}</td><td>${guest.checkoutDate}</td><td>${stayDays(guest.checkinDate, guest.checkoutDate)} hari</td></tr>`).join('')
+      : emptyRow(6, 'Tidak ada checkout pada tanggal ini');
+  }
+}
 function initCheckinMenu() {
   if ($('guestCheckinDate')) $('guestCheckinDate').value = todayIso();
+  if ($('checkinReportDate')) $('checkinReportDate').value = todayIso();
+  if ($('checkoutReportDate')) $('checkoutReportDate').value = todayIso();
 
+  $('checkinReportDate')?.addEventListener('change', renderCheckinReport);
+  $('checkoutReportDate')?.addEventListener('change', renderCheckoutMenu);
   $('guestName')?.addEventListener('input', handleGuestNameCheck);
   $('guestName')?.addEventListener('change', handleGuestNameCheck);
   $('goAddEmployeeBtn')?.addEventListener('click', goAddEmployeeFromCheckin);
@@ -137,6 +176,7 @@ function initCheckinMenu() {
     const room = state.rooms.find((item) => item.id === $('guestRoom')?.value);
 
     if (!employee) return alert('Nama karyawan belum ada di database.');
+    if (!isEmployeeActive(employee)) return alert('Check in hanya bisa untuk karyawan status Aktif.');
     const existingGuest = editingGuestId ? state.guests.find((guest) => guest.id === editingGuestId) : null;
     const isCurrentRoom = existingGuest && existingGuest.roomId === room?.id;
     if (!room || (!isCurrentRoom && (room.status !== 'bersih' || roomOccupant(room.id)))) return alert('Kamar tidak tersedia. Pilih kamar bersih yang kosong.');
@@ -181,6 +221,8 @@ function initCheckinMenu() {
     saveData(STORAGE_KEYS.rooms, state.rooms);
     event.target.reset();
     if ($('guestCheckinDate')) $('guestCheckinDate').value = todayIso();
+  if ($('checkinReportDate')) $('checkinReportDate').value = todayIso();
+  if ($('checkoutReportDate')) $('checkoutReportDate').value = todayIso();
     renderAll();
     showPage('inhouse', 'In House');
   });

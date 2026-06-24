@@ -214,6 +214,18 @@ function stayDays(checkinDate, checkoutDate = '') {
   return Math.max(Math.floor((end - start) / 86400000) + 1, 1);
 }
 
+function normalizeEmployeeStatus(status) {
+  const normalized = text(status) || 'Aktif';
+  const lower = key(normalized);
+  if (['blacklist', 'blocked'].includes(lower)) return 'Blacklist';
+  if (['non aktif', 'nonaktif', 'inactive', 'tidak aktif'].includes(lower)) return 'Non Aktif';
+  return 'Aktif';
+}
+
+function isEmployeeActive(employee) {
+  return normalizeEmployeeStatus(employee?.status) === 'Aktif';
+}
+
 function findEmployeeByName(name) {
   return state.employees.find((employee) => key(employee.name) === key(name));
 }
@@ -233,10 +245,10 @@ function createOrUpdateRoom(room) {
 function createOrUpdateEmployee(employee) {
   const index = state.employees.findIndex((item) => text(item.nik) === text(employee.nik) || key(item.name) === key(employee.name));
   if (index >= 0) {
-    state.employees[index] = { ...state.employees[index], ...employee };
+    state.employees[index] = { ...state.employees[index], status: normalizeEmployeeStatus(state.employees[index].status), ...employee, status: normalizeEmployeeStatus(employee.status || state.employees[index].status) };
     return state.employees[index];
   }
-  const created = { id: uid(), ...employee };
+  const created = { id: uid(), ...employee, status: normalizeEmployeeStatus(employee.status) };
   state.employees.push(created);
   return created;
 }

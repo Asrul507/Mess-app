@@ -48,8 +48,9 @@ function convertReservationToCheckin(reservationId) {
   const room = state.rooms.find((item) => item.id === reservation.roomId);
   if (!room || room.status !== 'bersih' || roomOccupant(room.id)) return alert('Kamar reservasi tidak bersih/kosong. Ubah kamar atau check in manual.');
   let employee = findEmployeeByName(reservation.name);
+  if (employee && !isEmployeeActive(employee)) return alert('Reservasi tidak bisa check in karena status karyawan bukan Aktif.');
   if (!employee && reservation.name && reservation.nik) {
-    employee = createOrUpdateEmployee({ name: reservation.name, nik: reservation.nik, level: reservation.level, position: reservation.position, office: reservation.office, phone: '' });
+    employee = createOrUpdateEmployee({ name: reservation.name, nik: reservation.nik, level: reservation.level, position: reservation.position, office: reservation.office, phone: '', status: 'Aktif' });
     saveData(STORAGE_KEYS.employees, state.employees);
   }
   state.guests.push({ id: uid(), ...reservationToGuestPayload(reservation, room, employee), createdAt: new Date().toISOString() });
