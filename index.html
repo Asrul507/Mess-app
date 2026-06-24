@@ -24,7 +24,7 @@
   </aside>
 
   <main class="main">
-    <header class="topbar"><div><p class="eyebrow">Living Mess Operation</p><h2 id="pageTitle">Dashboard</h2></div><div class="date-pill" id="todayText"></div></header>
+    <header class="topbar"><button class="back-btn" id="backBtn" type="button">← Kembali</button><div class="topbar-title"><p class="eyebrow">Living Mess Operation</p><h2 id="pageTitle">Dashboard</h2></div><div class="date-pill" id="todayText"></div></header>
 
     <section id="dashboard" class="page active">
       <div class="grid cards"><article class="card stat-card"><p>Bersih</p><strong id="cleanRooms">0</strong></article><article class="card stat-card"><p>Terisi</p><strong id="occupiedRooms">0</strong></article><article class="card stat-card"><p>Kotor</p><strong id="dirtyRooms">0</strong></article><article class="card stat-card"><p>Rusak</p><strong id="brokenRooms">0</strong></article></div>
@@ -43,6 +43,8 @@
 
     <section id="meal" class="page"><article class="card"><div class="section-title"><div><h3>Absen Makan Cepat</h3><p>Klik tombol Pagi, Siang, Malam.</p></div><input type="date" id="mealQuickDate" /></div><div class="meal-list" id="mealQuickList"></div></article></section><section id="meal-report" class="page"><article class="card"><div class="section-title"><div><h3>Rekap Absen Makan</h3></div><div class="report-actions"><input type="date" id="mealReportDate" /><button class="secondary-btn no-margin" id="downloadMealReport" type="button">Download Excel</button></div></div><div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Kamar</th><th>Office</th><th>Jenis</th><th>Jam</th></tr></thead><tbody id="mealReportTable"></tbody></table></div></article></section><section id="guest-report" class="page"><article class="card"><div class="section-title"><div><h3>Laporan Tamu</h3><p>CI, In House, Check Out.</p></div><div class="report-actions"><select id="guestReportStatus"><option value="all">Semua</option><option value="Reserved">Reservasi</option><option value="CI Today">CI Hari Ini</option><option value="In House">In House</option><option value="Check Out">Check Out</option><option value="Cancelled">Cancelled</option><option value="No Show">No Show</option></select><input type="date" id="guestReportDate" /><button class="secondary-btn no-margin" id="downloadGuestReport" type="button">Download Excel</button></div></div><div class="table-wrap"><table><thead><tr><th>Status</th><th>Nama</th><th>NIK</th><th>Jabatan</th><th>Posisi</th><th>Kamar</th><th>Office</th><th>Keperluan</th><th>Makan</th><th>CI</th><th>CO</th><th>Lama</th></tr></thead><tbody id="guestReportTable"></tbody></table></div></article></section>
   </main>
+  <nav class="mobile-quick-nav" aria-label="Quick mobile navigation"><button type="button" data-quick-page="inhouse">In House</button><button class="quick-checkin" type="button" data-quick-page="checkin">Check In</button><button type="button" data-quick-page="meal">Absen</button></nav>
+  <div class="app-modal hidden" id="appModal" role="dialog" aria-modal="true" aria-labelledby="appModalTitle"><div class="app-modal-card"><div class="app-modal-icon" id="appModalIcon">!</div><h3 id="appModalTitle">Notifikasi</h3><p id="appModalMessage"></p><input id="appModalInput" class="hidden" /><div class="app-modal-actions" id="appModalActions"></div></div></div>
   <datalist id="employeeNames"></datalist><datalist id="purposeOptions"></datalist>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

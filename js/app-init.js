@@ -2,6 +2,10 @@ function initNavigation() {
   document.querySelectorAll('.nav-btn').forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.page, button.textContent));
   });
+  $('backBtn')?.addEventListener('click', goBackPage);
+  document.querySelectorAll('[data-quick-page]').forEach((button) => {
+    button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
+  });
 }
 
 function initApp() {

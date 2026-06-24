@@ -89,27 +89,27 @@ function editGuest(guestId) {
   showPage('checkin', 'Edit In House');
 }
 
-function detailGuest(guestId) {
+async function detailGuest(guestId) {
   const guest = state.guests.find((item) => item.id === guestId);
   if (!guest) return;
   const room = roomOfGuest(guest);
-  alert(`Detail stay\nNama: ${guest.name}\nKamar: ${roomLabel(room)}\nCI: ${guest.checkinDate}\nLama: ${stayDays(guest.checkinDate)} hari\nKeperluan: ${guest.purpose}\nCatatan: ${guest.note || '-'}`);
+  await appAlert(`Nama: ${guest.name}\nKamar: ${roomLabel(room)}\nCI: ${guest.checkinDate}\nLama: ${stayDays(guest.checkinDate)} hari\nKeperluan: ${guest.purpose}\nCatatan: ${guest.note || '-'}`, 'Detail Stay');
 }
 
-function updateGuestNote(guestId) {
+async function updateGuestNote(guestId) {
   const guest = state.guests.find((item) => item.id === guestId);
   if (!guest) return;
-  const note = prompt(`Catatan untuk ${guest.name}`, guest.note || '');
+  const note = await appPrompt(`Catatan untuk ${guest.name}`, guest.note || '', 'Tambah Catatan');
   if (note === null) return;
   guest.note = text(note);
   saveData(STORAGE_KEYS.guests, state.guests);
   renderAll();
 }
 
-function checkoutGuest(guestId) {
+async function checkoutGuest(guestId) {
   const guest = state.guests.find((item) => item.id === guestId);
   if (!guest) return;
-  if (!confirm(`Check out ${guest.name} hari ini?`)) return;
+  if (!await appConfirm(`Check out ${guest.name} hari ini? Kamar akan otomatis menjadi kotor.`, 'Konfirmasi Check Out')) return;
   guest.status = 'Check Out';
   guest.checkoutDate = todayIso();
   const room = roomOfGuest(guest);
