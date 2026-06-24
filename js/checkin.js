@@ -77,9 +77,23 @@ function renderInhouse() {
     ? guests.map((guest) => {
       const room = roomOfGuest(guest);
       const employee = employeeOfGuest(guest);
-      return `<div class="inhouse-item"><div class="inhouse-main"><strong>${guest.name}</strong><span>${roomLabel(room)} • ${guest.office || '-'}</span></div><div class="inhouse-meta"><span>${employee.level || guest.level || '-'}</span><span>${employee.position || guest.position || '-'}</span><span>CI ${guest.checkinDate}</span><span>${stayDays(guest.checkinDate)} hari</span><span>${guest.purpose || '-'}</span><span>Makan: ${guest.mealEligible || '-'}</span></div><div class="inhouse-actions"><button class="mini-btn" onclick="detailGuest('${guest.id}')">Detail</button><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit/Pindah</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">CO</button></div></div>`;
+      return `<div class="inhouse-item"><div class="inhouse-main"><strong>${guest.name}</strong><span>${roomLabel(room)} • ${guest.office || '-'}</span></div><div class="inhouse-meta"><span>${employee.level || guest.level || '-'}</span><span>${employee.position || guest.position || '-'}</span><span>CI ${guest.checkinDate}</span><span>${stayDays(guest.checkinDate)} hari</span><span>${guest.purpose || '-'}</span><span>Makan: ${guest.mealEligible || '-'}</span></div><div class="row-menu"><button class="dots-btn" onclick="toggleInhouseActions(event, '${guest.id}')" aria-label="Aksi ${guest.name}">⋯</button><div class="row-menu-list hidden" id="inhouseMenu-${guest.id}"><button onclick="detailGuest('${guest.id}')">Detail</button><button onclick="editGuest('${guest.id}')">Edit/Pindah</button><button onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-text" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></div></div>`;
     }).join('')
     : '<div class="empty-card">Belum ada penghuni In House.</div>';
+}
+
+
+function closeInhouseMenus() {
+  document.querySelectorAll('.row-menu-list').forEach((menu) => menu.classList.add('hidden'));
+}
+
+function toggleInhouseActions(event, guestId) {
+  event.stopPropagation();
+  const menu = $(`inhouseMenu-${guestId}`);
+  if (!menu) return;
+  const willOpen = menu.classList.contains('hidden');
+  closeInhouseMenus();
+  menu.classList.toggle('hidden', !willOpen);
 }
 
 function editGuest(guestId) {

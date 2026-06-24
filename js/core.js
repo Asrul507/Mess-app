@@ -253,6 +253,7 @@ function createOrUpdateRoom(room) {
   const normalized = { ...room, status: normalizeStatus(room.status) };
   const index = state.rooms.findIndex((item) => text(item.roomNo) === text(normalized.roomNo) && text(item.bedCode).toUpperCase() === text(normalized.bedCode).toUpperCase());
   if (index >= 0) {
+    if (roomOccupant(state.rooms[index].id)) return state.rooms[index];
     state.rooms[index] = { ...state.rooms[index], ...normalized };
     return state.rooms[index];
   }

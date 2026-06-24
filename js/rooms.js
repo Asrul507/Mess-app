@@ -170,7 +170,7 @@ function selectedRoomIds() {
 function setRoomStatus(roomId, status) {
   const room = state.rooms.find((item) => item.id === roomId);
   if (!room) return;
-  if (status === 'bersih' && roomOccupant(roomId)) return alert('Kamar masih terisi, tidak bisa dibuat bersih.');
+  if (roomOccupant(roomId)) return alert('Kamar masih terisi. Ubah hanya lewat pindah kamar atau check out dari menu In House.');
   room.status = status;
   saveData(STORAGE_KEYS.rooms, state.rooms);
   renderAll();
@@ -192,7 +192,7 @@ function bulkSetRoomStatus(status) {
   ids.forEach((id) => {
     const room = state.rooms.find((item) => item.id === id);
     if (!room) return;
-    if (status === 'bersih' && roomOccupant(id)) { skipped += 1; return; }
+    if (roomOccupant(id)) { skipped += 1; return; }
     room.status = status;
     changed += 1;
   });
@@ -256,11 +256,38 @@ function renderDashboard() {
   if ($('mealTodayTable')) $('mealTodayTable').innerHTML = todayMeals.length ? todayMeals.slice(-10).reverse().map((meal) => `<tr><td>${meal.guestName}</td><td>${meal.type}</td><td>${meal.time}</td></tr>`).join('') : emptyRow(3, 'Belum ada absen makan hari ini');
 }
 
+
+function roomStayHistory(roomId) {
+  return state.guests
+    .filter((guest) => guest.roomId === roomId)
+    .slice()
+    .sort((a, b) => text(b.checkinDate).localeCompare(text(a.checkinDate)));
+}
+
+async function showRoomDetail(roomId) {
+  const room = state.rooms.find((item) => item.id === roomId);
+  if (!room) return;
+  const occupant = roomOccupant(roomId);
+  const history = roomStayHistory(roomId);
+  const lines = [
+    `Kamar: ${roomLabel(room)}`,
+    `Tipe: ${room.type || '-'}`,
+    `Status: ${room.status || '-'}`,
+    `Gedung: ${room.building || '-'}`,
+    occupant ? `Terisi oleh: ${occupant.name}` : 'Terisi oleh: -',
+    occupant ? `CI: ${occupant.checkinDate} (${stayDays(occupant.checkinDate)} hari)` : 'CI: -',
+    '',
+    'Riwayat penghuni:',
+    ...(history.length ? history.map((guest) => `• ${guest.name} | CI ${guest.checkinDate || '-'} | CO ${guest.checkoutDate || '-'} | ${guest.status}`) : ['Belum ada riwayat.']),
+  ];
+  await appAlert(lines.join('\n'), `Detail ${roomLabel(room)}`);
+}
+
 function renderRooms() {
   if ($('roomCountText')) $('roomCountText').textContent = `${state.rooms.length} data`;
-  if ($('roomOverviewGrid')) $('roomOverviewGrid').innerHTML = sortedRooms(state.rooms).filter((room) => matchesSearch([roomLabel(room), room.type, room.status, room.building, roomOccupant(room.id)?.name])).map((room) => { const occupant = roomOccupant(room.id); return `<div class="room-card ${room.status}"><div><strong>${roomLabel(room)}</strong><p>${room.type}</p></div>${statusBadge(room.status)}<small>${occupant ? occupant.name : 'Kosong'}</small></div>`; }).join('');
+  if ($('roomOverviewGrid')) $('roomOverviewGrid').innerHTML = sortedRooms(state.rooms).filter((room) => matchesSearch([roomLabel(room), room.type, room.status, room.building, roomOccupant(room.id)?.name])).map((room) => { const occupant = roomOccupant(room.id); return `<button type="button" class="room-card ${room.status}" onclick="showRoomDetail('${room.id}')"><div><strong>${roomLabel(room)}</strong><p>${room.type}</p></div>${statusBadge(room.status)}<small>${occupant ? `${occupant.name} • CI ${occupant.checkinDate} • ${stayDays(occupant.checkinDate)} hari` : 'Kosong'}</small></button>`; }).join('');
   const filtered = getFilteredRooms();
-  if ($('roomStatusTable')) $('roomStatusTable').innerHTML = filtered.length ? filtered.map((room) => { const occupant = roomOccupant(room.id); return `<tr><td><label class="check-cell"><input type="checkbox" class="room-check" value="${room.id}"> ${roomLabel(room)}</label></td><td>${room.type}</td><td>${statusBadge(room.status)}</td><td>${occupant ? occupant.name : '-'}</td><td><div class="button-row"><button class="mini-btn" onclick="setRoomStatus('${room.id}','bersih')">Bersih</button><button class="mini-btn" onclick="setRoomStatus('${room.id}','kotor')">Kotor</button><button class="danger-btn" onclick="setRoomStatus('${room.id}','rusak')">Rusak</button></div></td></tr>`; }).join('') : emptyRow(5, 'Tidak ada kamar sesuai filter');
+  if ($('roomStatusTable')) $('roomStatusTable').innerHTML = filtered.length ? filtered.map((room) => { const occupant = roomOccupant(room.id); const disabled = occupant ? 'disabled title="Kamar terisi hanya bisa diubah lewat In House"' : ''; return `<tr><td><label class="check-cell"><input type="checkbox" class="room-check" value="${room.id}" ${occupant ? 'disabled' : ''}> ${roomLabel(room)}</label></td><td>${room.type}</td><td>${statusBadge(room.status)}</td><td>${occupant ? occupant.name : '-'}</td><td><div class="button-row"><button class="mini-btn" ${disabled} onclick="setRoomStatus('${room.id}','bersih')">Bersih</button><button class="mini-btn" ${disabled} onclick="setRoomStatus('${room.id}','kotor')">Kotor</button><button class="danger-btn" ${disabled} onclick="setRoomStatus('${room.id}','rusak')">Rusak</button></div></td></tr>`; }).join('') : emptyRow(5, 'Tidak ada kamar sesuai filter');
   const brokenRooms = sortedRooms(state.rooms).filter((room) => room.status === 'rusak' && matchesSearch([roomLabel(room), room.type, room.status, room.building]));
   if ($('brokenRoomCountText')) $('brokenRoomCountText').textContent = `${brokenRooms.length} rusak`;
   if ($('brokenRoomCards')) $('brokenRoomCards').innerHTML = brokenRooms.length ? brokenRooms.map((room) => `<div class="guest-card"><div class="guest-card-head"><div><h3>${roomLabel(room)}</h3><p>${room.type}</p></div>${statusBadge(room.status)}</div><p class="note-text">Tidak tampil di pilihan check in.</p><div class="card-actions"><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}','kotor')">Set Kotor</button><button class="primary-btn" onclick="setRoomStatus('${room.id}','bersih')">Set Bersih</button></div></div>`).join('') : '<div class="empty-card">Tidak ada kamar rusak.</div>';

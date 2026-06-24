@@ -8,6 +8,7 @@ function initNavigation() {
   });
   $('backBtn')?.addEventListener('click', goBackPage);
   $('globalSearch')?.addEventListener('input', renderAll);
+  document.addEventListener('click', () => { if (typeof closeInhouseMenus === 'function') closeInhouseMenus(); });
   document.querySelectorAll('[data-quick-page]').forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
   });
