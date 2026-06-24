@@ -7,10 +7,7 @@ function initNavigation() {
     });
   });
   $('backBtn')?.addEventListener('click', goBackPage);
-  document.querySelectorAll('[data-quick-page]').forEach((button) => {
-    button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
-  });
-  $('backBtn')?.addEventListener('click', goBackPage);
+  $('globalSearch')?.addEventListener('input', renderAll);
   document.querySelectorAll('[data-quick-page]').forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
   });

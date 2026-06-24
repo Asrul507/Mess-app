@@ -6,7 +6,7 @@ function renderPurposeOptions() {
 function renderRoomOptions() {
   const select = $('guestRoom');
   if (!select) return;
-  const availableRooms = state.rooms.filter((room) => room.status === 'bersih' && !roomOccupant(room.id));
+  const availableRooms = sortedRooms(state.rooms).filter((room) => room.status === 'bersih' && !roomOccupant(room.id));
   select.innerHTML = availableRooms.length
     ? availableRooms.map((room) => `<option value="${room.id}">${roomLabel(room)} - ${room.type}</option>`).join('')
     : '<option value="">Tidak ada kamar bersih tersedia</option>';
@@ -65,7 +65,11 @@ function renderCheckin() {
 }
 
 function renderInhouse() {
-  const guests = activeGuests();
+  const guests = activeGuests().filter((guest) => {
+    const room = roomOfGuest(guest);
+    const employee = employeeOfGuest(guest);
+    return matchesSearch([guest.name, guest.nik, employee.level || guest.level, employee.position || guest.position, guest.office, roomLabel(room), guest.purpose, guest.mealEligible, guest.note]);
+  });
   if ($('inhouseCountText')) $('inhouseCountText').textContent = `${guests.length} orang`;
   if (!$('inhouseCards')) return;
 
@@ -73,7 +77,7 @@ function renderInhouse() {
     ? guests.map((guest) => {
       const room = roomOfGuest(guest);
       const employee = employeeOfGuest(guest);
-      return `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>Jabatan</b>${employee.level || guest.level || '-'}</span><span><b>Posisi</b>${employee.position || guest.position || '-'}</span><span><b>Tgl CI</b>${guest.checkinDate}</span><span><b>Lama Menginap</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose}</span><span><b>Makan</b>${guest.mealEligible}</span></div>${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}<div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Pindah Kamar</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="mini-btn" onclick="detailGuest('${guest.id}')">Detail Stay</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`;
+      return `<div class="inhouse-item"><div class="inhouse-main"><strong>${guest.name}</strong><span>${roomLabel(room)} • ${guest.office || '-'}</span></div><div class="inhouse-meta"><span>${employee.level || guest.level || '-'}</span><span>${employee.position || guest.position || '-'}</span><span>CI ${guest.checkinDate}</span><span>${stayDays(guest.checkinDate)} hari</span><span>${guest.purpose || '-'}</span><span>Makan: ${guest.mealEligible || '-'}</span></div><div class="inhouse-actions"><button class="mini-btn" onclick="detailGuest('${guest.id}')">Detail</button><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit/Pindah</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">CO</button></div></div>`;
     }).join('')
     : '<div class="empty-card">Belum ada penghuni In House.</div>';
 }
@@ -130,7 +134,7 @@ async function checkoutGuest(guestId) {
 
 function renderCheckinReport() {
   const date = $('checkinReportDate')?.value || todayIso();
-  const rows = state.guests.filter((guest) => guest.checkinDate === date);
+  const rows = state.guests.filter((guest) => guest.checkinDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.purpose, guest.status]));
   if ($('checkinReportTable')) {
     $('checkinReportTable').innerHTML = rows.length
       ? rows.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.purpose || '-'}</td><td>${guest.checkinDate}</td><td>${badge(guest.status, guest.status === 'In House' ? 'danger' : 'ok')}</td></tr>`).join('')
@@ -139,14 +143,14 @@ function renderCheckinReport() {
 }
 
 function renderCheckoutMenu() {
-  const active = activeGuests();
+  const active = activeGuests().filter((guest) => matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.purpose, guest.mealEligible]));
   if ($('checkoutCards')) {
     $('checkoutCards').innerHTML = active.length
       ? active.map((guest) => `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(roomOfGuest(guest))} • ${guest.office || '-'}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>CI</b>${guest.checkinDate}</span><span><b>Lama</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose || '-'}</span><span><b>Makan</b>${guest.mealEligible || '-'}</span></div><div class="card-actions"><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`).join('')
       : '<div class="empty-card">Tidak ada penghuni yang bisa checkout.</div>';
   }
   const date = $('checkoutReportDate')?.value || todayIso();
-  const checkedOut = state.guests.filter((guest) => guest.status === 'Check Out' && guest.checkoutDate === date);
+  const checkedOut = state.guests.filter((guest) => guest.status === 'Check Out' && guest.checkoutDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.checkinDate, guest.checkoutDate]));
   if ($('checkoutCountText')) $('checkoutCountText').textContent = `${checkedOut.length} data`;
   if ($('checkoutReportTable')) {
     $('checkoutReportTable').innerHTML = checkedOut.length

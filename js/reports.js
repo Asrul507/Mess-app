@@ -50,6 +50,7 @@ function guestReportRows() {
       return row.status === filter;
     })
     .filter((row) => !dateFilter || row._date === dateFilter)
+    .filter((row) => matchesSearch([row.status, row.nama, row.nik, row.jabatan, row.posisi, row.kamar, row.office, row.keperluan, row.dapat_makan, row.tanggal_ci, row.tanggal_co]))
     .map(({ _date, ...row }) => row);
 }
 

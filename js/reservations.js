@@ -77,7 +77,10 @@ function renderReservations() {
   renderPurposeOptions();
   renderReservationRoomOptions();
   if ($('reservationDate') && !$('reservationDate').value) $('reservationDate').value = todayIso();
-  const reservations = state.reservations.slice().reverse();
+  const reservations = state.reservations.slice().reverse().filter((reservation) => {
+    const room = state.rooms.find((item) => item.id === reservation.roomId);
+    return matchesSearch([reservation.name, reservation.nik, reservation.office, reservation.purpose, reservation.status, roomLabel(room)]);
+  });
   if ($('reservationCountText')) $('reservationCountText').textContent = `${reservations.length} data`;
   if (!$('reservationCards')) return;
   $('reservationCards').innerHTML = reservations.length ? reservations.map((reservation) => {

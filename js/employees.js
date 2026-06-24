@@ -57,10 +57,11 @@ function handleEmployeeFileUpload(event) {
 }
 
 function renderEmployees() {
-  if ($('employeeCountText')) $('employeeCountText').textContent = `${state.employees.length} data`;
+  const employees = state.employees.filter((employee) => matchesSearch([employee.name, employee.nik, employee.level, employee.position, employee.office, employee.phone, normalizeEmployeeStatus(employee.status)]));
+  if ($('employeeCountText')) $('employeeCountText').textContent = `${employees.length} data`;
   if ($('employeeTable')) {
-    $('employeeTable').innerHTML = state.employees.length
-      ? state.employees.map((employee) => `<tr><td>${employee.name}</td><td>${employee.nik}</td><td>${employee.level}</td><td>${employee.position}</td><td>${employee.office}</td><td>${employee.phone || '-'}</td><td>${badge(normalizeEmployeeStatus(employee.status), isEmployeeActive(employee) ? 'ok' : 'danger')}</td></tr>`).join('')
+    $('employeeTable').innerHTML = employees.length
+      ? employees.map((employee) => `<tr><td>${employee.name}</td><td>${employee.nik}</td><td>${employee.level}</td><td>${employee.position}</td><td>${employee.office}</td><td>${employee.phone || '-'}</td><td>${badge(normalizeEmployeeStatus(employee.status), isEmployeeActive(employee) ? 'ok' : 'danger')}</td></tr>`).join('')
       : emptyRow(7, 'Belum ada data karyawan');
   }
   if ($('employeeNames')) {

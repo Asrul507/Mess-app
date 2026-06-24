@@ -18,7 +18,7 @@ function mealReportRows() {
       }
       grouped.get(keyValue)[key(meal.type)] = meal.time;
     });
-  return Array.from(grouped.values()).sort((a, b) => a.nama.localeCompare(b.nama));
+  return Array.from(grouped.values()).filter((row) => matchesSearch([row.tanggal, row.nama, row.kamar, row.office, row.pagi, row.siang, row.malam])).sort((a, b) => a.nama.localeCompare(b.nama));
 }
 
 function renderMeals() {
@@ -26,7 +26,7 @@ function renderMeals() {
   if ($('mealTodayDateText')) $('mealTodayDateText').textContent = formatDate();
   if ($('mealReportDate') && !$('mealReportDate').value) $('mealReportDate').value = todayIso();
 
-  const eligibleGuests = activeGuests().filter((guest) => guest.mealEligible === 'Ya');
+  const eligibleGuests = activeGuests().filter((guest) => guest.mealEligible === 'Ya' && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office]));
   if ($('mealQuickList')) {
     $('mealQuickList').innerHTML = eligibleGuests.length
       ? eligibleGuests.map((guest) => {

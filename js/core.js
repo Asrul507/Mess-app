@@ -143,6 +143,25 @@ function seedRooms() {
   ];
 }
 
+
+function globalSearchValue() {
+  return key($('globalSearch')?.value || '');
+}
+
+function matchesSearch(values) {
+  const query = globalSearchValue();
+  if (!query) return true;
+  return values.some((value) => key(value).includes(query));
+}
+
+function sortedRooms(rooms = state.rooms) {
+  return rooms.slice().sort((a, b) => {
+    const roomCompare = text(a.roomNo).localeCompare(text(b.roomNo), 'id', { numeric: true, sensitivity: 'base' });
+    if (roomCompare) return roomCompare;
+    return text(a.bedCode).localeCompare(text(b.bedCode), 'id', { numeric: true, sensitivity: 'base' });
+  });
+}
+
 function roomLabel(room) {
   if (!room) return '-';
   return room.bedCode ? `${room.roomNo}${room.bedCode}` : room.roomNo;
