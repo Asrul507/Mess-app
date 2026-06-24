@@ -112,7 +112,7 @@ function ensureForecastPage() {
   const section = document.createElement('section');
   section.id = 'forecast';
   section.className = 'page';
-  section.innerHTML = `<article class="card forecast-filter-card"><div class="section-title"><div><h3>Forecast</h3><p>Forecast Front Office berdasarkan tanggal filter.</p></div><label>Filter Tanggal<input type="date" id="forecastDate" /></label></div></article><div class="grid cards forecast-cards"><article class="card stat-card"><p>Last Night</p><strong id="forecastLastNight">0</strong></article><article class="card stat-card"><p>Arrival</p><strong id="forecastArrival">0</strong></article><article class="card stat-card"><p>Departure</p><strong id="forecastDeparture">0</strong></article><article class="card stat-card"><p>In House</p><strong id="forecastInHouse">0</strong></article></div><div class="grid two-col forecast-grid"><article class="card"><div class="section-title"><h3>Occupancy</h3><span id="forecastRoomBase">0 kamar</span></div><div class="forecast-occ"><strong id="forecastOcc">0.0%</strong><span>Occ sesuai tanggal filter</span></div></article><article class="card"><div class="section-title"><h3>MTD</h3><span id="forecastMtdRange">-</span></div><div class="forecast-occ"><strong id="forecastMtdOcc">0.0%</strong><span>Occ MTD sampai tanggal filter</span></div></article></div><article class="card"><div class="section-title"><h3>Forecast Table</h3><span id="forecastSummaryText">Daily & MTD</span></div><div class="table-wrap"><table><thead><tr><th>Periode</th><th>Last Night</th><th>Arrival</th><th>Departure</th><th>In House</th><th>Room Available</th><th>Room Night</th><th>Occ %</th></tr></thead><tbody id="forecastTable"></tbody></table></div></article>`;
+  section.innerHTML = `<article class="card forecast-filter-card"><div class="section-title"><div><h3>Forecast</h3><p>Forecast Front Office berdasarkan tanggal filter.</p></div><label>Filter Tanggal<input type="date" id="forecastDate" /></label></div></article><div class="forecast-side-grid"><article class="card forecast-panel"><div class="section-title"><div><h3>Daily Forecast</h3><p id="forecastDailyDate">Tanggal -</p></div><span id="forecastRoomBase">0 kamar</span></div><div class="forecast-mini-grid"><div><span>Last Night</span><strong id="forecastLastNight">0</strong></div><div><span>Arrival</span><strong id="forecastArrival">0</strong></div><div><span>Departure</span><strong id="forecastDeparture">0</strong></div><div><span>In House</span><strong id="forecastInHouse">0</strong></div></div><div class="forecast-occ"><strong id="forecastOcc">0.0%</strong><span>Daily OCC</span></div></article><article class="card forecast-panel"><div class="section-title"><div><h3>MTD Forecast</h3><p id="forecastMtdRange">-</p></div><span id="forecastMtdDays">0 hari</span></div><div class="forecast-mini-grid"><div><span>Last Night Avg</span><strong id="forecastMtdLastNight">0</strong></div><div><span>Arrival</span><strong id="forecastMtdArrival">0</strong></div><div><span>Departure</span><strong id="forecastMtdDeparture">0</strong></div><div><span>In House Avg</span><strong id="forecastMtdInHouse">0</strong></div></div><div class="forecast-occ"><strong id="forecastMtdOcc">0.0%</strong><span>MTD OCC</span></div></article></div><article class="card"><div class="section-title"><h3>Forecast Table</h3><span id="forecastSummaryText">Daily & MTD</span></div><div class="table-wrap"><table><thead><tr><th>Periode</th><th>Last Night</th><th>Arrival</th><th>Departure</th><th>In House</th><th>Room Available</th><th>Room Night</th><th>Occ %</th></tr></thead><tbody id="forecastTable"></tbody></table></div></article>`;
   main.appendChild(section);
 }
 
@@ -124,14 +124,20 @@ function renderForecast() {
   const daily = forecastDayStats(dateText);
   const mtd = forecastMtdStats(dateText);
 
+  if ($('forecastDailyDate')) $('forecastDailyDate').textContent = `Tanggal ${dateText}`;
   if ($('forecastLastNight')) $('forecastLastNight').textContent = daily.lastNight;
   if ($('forecastArrival')) $('forecastArrival').textContent = daily.arrival;
   if ($('forecastDeparture')) $('forecastDeparture').textContent = daily.departure;
   if ($('forecastInHouse')) $('forecastInHouse').textContent = daily.inHouse;
   if ($('forecastOcc')) $('forecastOcc').textContent = percentText(daily.occPercent);
-  if ($('forecastMtdOcc')) $('forecastMtdOcc').textContent = percentText(mtd.occPercent);
-  if ($('forecastRoomBase')) $('forecastRoomBase').textContent = `${daily.totalRooms} kamar/bed tersedia`;
+  if ($('forecastRoomBase')) $('forecastRoomBase').textContent = `${daily.totalRooms} kamar/bed`;
   if ($('forecastMtdRange')) $('forecastMtdRange').textContent = `${mtd.from} s/d ${mtd.to}`;
+  if ($('forecastMtdDays')) $('forecastMtdDays').textContent = `${mtd.days} hari`;
+  if ($('forecastMtdLastNight')) $('forecastMtdLastNight').textContent = numberText(mtd.lastNightAvg);
+  if ($('forecastMtdArrival')) $('forecastMtdArrival').textContent = mtd.arrival;
+  if ($('forecastMtdDeparture')) $('forecastMtdDeparture').textContent = mtd.departure;
+  if ($('forecastMtdInHouse')) $('forecastMtdInHouse').textContent = numberText(mtd.inHouseAvg);
+  if ($('forecastMtdOcc')) $('forecastMtdOcc').textContent = percentText(mtd.occPercent);
   if ($('forecastSummaryText')) $('forecastSummaryText').textContent = `Tanggal ${dateText}`;
 
   if ($('forecastTable')) {
