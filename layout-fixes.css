@@ -101,24 +101,62 @@ body {
   height: 18px;
 }
 
-.move-room-card {
+.move-room-card,
+.repair-modal-card {
   text-align: left;
 }
 
 .move-room-card .app-modal-icon,
 .move-room-card h3,
-.move-room-card p {
+.move-room-card p,
+.repair-modal-card .app-modal-icon,
+.repair-modal-card h3,
+.repair-modal-card p {
   text-align: center;
 }
 
-.move-room-fields {
+.move-room-fields,
+.repair-fields {
   display: grid;
   gap: 14px;
   margin-top: 14px;
 }
 
-.move-room-fields textarea {
+.move-room-fields textarea,
+.repair-fields textarea {
   min-height: 96px;
+}
+
+.repair-card .note-text {
+  margin-top: 14px !important;
+}
+
+.repair-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.repair-info-grid span {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  color: #172033;
+  font-size: 13px;
+  padding: 10px;
+}
+
+.repair-info-grid b {
+  color: #64748b;
+  display: block;
+  font-size: 11px;
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.repair-history-card {
+  margin-top: 18px;
 }
 
 .mobile-quick-nav {
@@ -165,6 +203,10 @@ body {
     width: 14px;
     min-width: 14px;
     font-size: 12px;
+  }
+
+  .repair-info-grid {
+    grid-template-columns: 1fr;
   }
 
   .topbar {
