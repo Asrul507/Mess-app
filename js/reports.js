@@ -12,6 +12,7 @@ function guestReportRows() {
       posisi: employee.position || guest.position || '',
       kamar: roomLabel(room),
       office: guest.office,
+      site: guest.site || employee.site || '',
       keperluan: guest.purpose,
       dapat_makan: guest.mealEligible,
       tanggal_ci: guest.checkinDate,
@@ -32,6 +33,7 @@ function guestReportRows() {
       posisi: reservation.position || '',
       kamar: room ? roomLabel(room) : '',
       office: reservation.office || '',
+      site: reservation.site || '',
       keperluan: reservation.purpose || '',
       dapat_makan: reservation.mealEligible || '',
       tanggal_ci: reservation.checkinDate || '',
@@ -50,7 +52,7 @@ function guestReportRows() {
       return row.status === filter;
     })
     .filter((row) => !dateFilter || row._date === dateFilter)
-    .filter((row) => matchesSearch([row.status, row.nama, row.nik, row.jabatan, row.posisi, row.kamar, row.office, row.keperluan, row.dapat_makan, row.tanggal_ci, row.tanggal_co]))
+    .filter((row) => matchesSearch([row.status, row.nama, row.nik, row.jabatan, row.posisi, row.kamar, row.office, row.site, row.keperluan, row.dapat_makan, row.tanggal_ci, row.tanggal_co]))
     .map(({ _date, ...row }) => row);
 }
 
@@ -65,8 +67,8 @@ function renderReports() {
   const rows = guestReportRows();
   if (!$('guestReportTable')) return;
   $('guestReportTable').innerHTML = rows.length
-    ? rows.map((row) => `<tr><td>${badge(row.status, reportBadgeClass(row.status))}</td><td>${row.nama}</td><td>${row.nik}</td><td>${row.jabatan}</td><td>${row.posisi}</td><td>${row.kamar || '-'}</td><td>${row.office}</td><td>${row.keperluan}</td><td>${row.dapat_makan}</td><td>${row.tanggal_ci || '-'}</td><td>${row.tanggal_co || '-'}</td><td>${row.lama_menginap}</td></tr>`).join('')
-    : emptyRow(12, 'Belum ada data laporan tamu');
+    ? rows.map((row) => `<tr><td>${badge(row.status, reportBadgeClass(row.status))}</td><td>${row.nama}</td><td>${row.nik}</td><td>${row.jabatan}</td><td>${row.posisi}</td><td>${row.kamar || '-'}</td><td>${row.office}</td><td>${row.site || '-'}</td><td>${row.keperluan}</td><td>${row.dapat_makan}</td><td>${row.tanggal_ci || '-'}</td><td>${row.tanggal_co || '-'}</td><td>${row.lama_menginap}</td></tr>`).join('')
+    : emptyRow(13, 'Belum ada data laporan tamu');
 }
 
 function initReportsMenu() {

@@ -11,6 +11,7 @@ function mealReportRows() {
           nama: meal.guestName,
           kamar: meal.roomLabel,
           office: meal.office,
+          site: meal.site || '',
           pagi: '',
           siang: '',
           malam: '',
@@ -18,7 +19,7 @@ function mealReportRows() {
       }
       grouped.get(keyValue)[key(meal.type)] = meal.time;
     });
-  return Array.from(grouped.values()).filter((row) => matchesSearch([row.tanggal, row.nama, row.kamar, row.office, row.pagi, row.siang, row.malam])).sort((a, b) => a.nama.localeCompare(b.nama));
+  return Array.from(grouped.values()).filter((row) => matchesSearch([row.tanggal, row.nama, row.kamar, row.office, row.site, row.pagi, row.siang, row.malam])).sort((a, b) => a.nama.localeCompare(b.nama));
 }
 
 function renderMeals() {
@@ -26,12 +27,12 @@ function renderMeals() {
   if ($('mealTodayDateText')) $('mealTodayDateText').textContent = formatDate();
   if ($('mealReportDate') && !$('mealReportDate').value) $('mealReportDate').value = todayIso();
 
-  const eligibleGuests = activeGuests().filter((guest) => guest.mealEligible === 'Ya' && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office]));
+  const eligibleGuests = activeGuests().filter((guest) => guest.mealEligible === 'Ya' && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.site]));
   if ($('mealQuickList')) {
     $('mealQuickList').innerHTML = eligibleGuests.length
       ? eligibleGuests.map((guest) => {
         const room = roomOfGuest(guest);
-        return `<div class="meal-row"><div><strong>${guest.name}</strong><p>${roomLabel(room)} • ${guest.office}</p></div><div class="meal-buttons">${['Pagi', 'Siang', 'Malam'].map((type) => {
+        return `<div class="meal-row"><div><strong>${guest.name}</strong><p>${roomLabel(room)} • ${guest.office} • ${guest.site || '-'}</p></div><div class="meal-buttons">${['Pagi', 'Siang', 'Malam'].map((type) => {
           const done = state.meals.some((meal) => meal.guestId === guest.id && meal.date === mealDate && meal.type === type);
           const doneMeal = state.meals.find((meal) => meal.guestId === guest.id && meal.date === mealDate && meal.type === type);
           return `<button class="meal-btn ${done ? 'done' : ''}" onclick="quickMeal('${guest.id}', '${type}')">${type}${done ? ` • ${doneMeal.time}` : ''}</button>`;
@@ -43,8 +44,8 @@ function renderMeals() {
   const rows = mealReportRows();
   if ($('mealReportTable')) {
     $('mealReportTable').innerHTML = rows.length
-      ? rows.map((row) => `<tr><td>${row.tanggal}</td><td>${row.nama}</td><td>${row.kamar}</td><td>${row.office}</td><td>${row.pagi || '-'}</td><td>${row.siang || '-'}</td><td>${row.malam || '-'}</td></tr>`).join('')
-      : emptyRow(7, 'Belum ada data absen makan pada tanggal ini');
+      ? rows.map((row) => `<tr><td>${row.tanggal}</td><td>${row.nama}</td><td>${row.kamar}</td><td>${row.office}</td><td>${row.site || '-'}</td><td>${row.pagi || '-'}</td><td>${row.siang || '-'}</td><td>${row.malam || '-'}</td></tr>`).join('')
+      : emptyRow(8, 'Belum ada data absen makan pada tanggal ini');
   }
 }
 
@@ -62,6 +63,7 @@ function quickMeal(guestId, type) {
     guestName: guest.name,
     roomLabel: roomLabel(room),
     office: guest.office,
+    site: guest.site || '',
     type,
     date,
     time: currentTime(),

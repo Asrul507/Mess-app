@@ -18,6 +18,7 @@ function fillCheckinEmployee(employee) {
   if ($('guestLevel')) $('guestLevel').value = employee.level || '';
   if ($('guestPosition')) $('guestPosition').value = employee.position || '';
   if ($('guestOffice')) $('guestOffice').value = employee.office || '';
+  if ($('guestSite')) $('guestSite').value = employee.site || '';
 }
 
 function handleGuestNameCheck() {
@@ -44,6 +45,7 @@ function handleGuestNameCheck() {
   if ($('guestNik')) $('guestNik').value = '';
   if ($('guestLevel')) $('guestLevel').value = '';
   if ($('guestPosition')) $('guestPosition').value = '';
+  if ($('guestSite')) $('guestSite').value = '';
   notice?.classList.remove('hidden');
 }
 
@@ -52,6 +54,7 @@ function goAddEmployeeFromCheckin() {
   if ($('employeeName')) $('employeeName').value = pendingCheckinEmployeeName;
   if ($('employeeNik')) $('employeeNik').value = text($('guestNik')?.value);
   if ($('employeeOffice')) $('employeeOffice').value = text($('guestOffice')?.value);
+  if ($('employeeSite')) $('employeeSite').value = text($('guestSite')?.value);
   showPage('employees', 'Database Karyawan');
   $('employeeNik')?.focus();
 }
@@ -68,7 +71,7 @@ function renderInhouse() {
   const guests = activeGuests().filter((guest) => {
     const room = roomOfGuest(guest);
     const employee = employeeOfGuest(guest);
-    return matchesSearch([guest.name, guest.nik, employee.level || guest.level, employee.position || guest.position, guest.office, roomLabel(room), guest.purpose, guest.mealEligible, guest.note]);
+    return matchesSearch([guest.name, guest.nik, employee.level || guest.level, employee.position || guest.position, guest.office, guest.site, roomLabel(room), guest.purpose, guest.mealEligible, guest.note]);
   });
   if ($('inhouseCountText')) $('inhouseCountText').textContent = `${guests.length} orang`;
   if (!$('inhouseCards')) return;
@@ -77,7 +80,7 @@ function renderInhouse() {
     ? guests.map((guest) => {
       const room = roomOfGuest(guest);
       const employee = employeeOfGuest(guest);
-      return `<div class="inhouse-item"><div class="inhouse-main"><strong>${guest.name}</strong><span>${roomLabel(room)} • ${guest.office || '-'}</span></div><div class="inhouse-meta"><span>${employee.level || guest.level || '-'}</span><span>${employee.position || guest.position || '-'}</span><span>CI ${guest.checkinDate}</span><span>${stayDays(guest.checkinDate)} hari</span><span>${guest.purpose || '-'}</span><span>Makan: ${guest.mealEligible || '-'}</span></div><div class="row-menu"><button class="dots-btn" onclick="toggleInhouseActions(event, '${guest.id}')" aria-label="Aksi ${guest.name}">⋯</button><div class="row-menu-list hidden" id="inhouseMenu-${guest.id}"><button onclick="detailGuest('${guest.id}')">Detail</button><button onclick="editGuest('${guest.id}')">Edit/Pindah</button><button onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-text" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></div></div>`;
+      return `<div class="inhouse-item"><div class="inhouse-main"><strong>${guest.name}</strong><span>${roomLabel(room)} • ${guest.office || '-'}</span></div><div class="inhouse-meta"><span>${employee.level || guest.level || '-'}</span><span>${employee.position || guest.position || '-'}</span><span>Site: ${guest.site || employee.site || '-'}</span><span>CI ${guest.checkinDate}</span><span>${stayDays(guest.checkinDate)} hari</span><span>${guest.purpose || '-'}</span><span>Makan: ${guest.mealEligible || '-'}</span></div><div class="row-menu"><button class="dots-btn" onclick="toggleInhouseActions(event, '${guest.id}')" aria-label="Aksi ${guest.name}">⋯</button><div class="row-menu-list hidden" id="inhouseMenu-${guest.id}"><button onclick="detailGuest('${guest.id}')">Detail</button><button onclick="editGuest('${guest.id}')">Edit/Pindah</button><button onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-text" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></div></div>`;
     }).join('')
     : '<div class="empty-card">Belum ada penghuni In House.</div>';
 }
@@ -100,7 +103,7 @@ function editGuest(guestId) {
   const guest = state.guests.find((item) => item.id === guestId);
   if (!guest) return;
   editingGuestId = guest.id;
-  fillCheckinEmployee({ name: guest.name, nik: guest.nik, level: guest.level, position: guest.position, office: guest.office });
+  fillCheckinEmployee({ name: guest.name, nik: guest.nik, level: guest.level, position: guest.position, office: guest.office, site: guest.site });
   if ($('guestPurpose')) $('guestPurpose').value = guest.purpose || '';
   if ($('guestMealEligible')) $('guestMealEligible').value = guest.mealEligible || 'Ya';
   if ($('guestCheckinDate')) $('guestCheckinDate').value = guest.checkinDate || todayIso();
@@ -119,7 +122,7 @@ async function detailGuest(guestId) {
   const guest = state.guests.find((item) => item.id === guestId);
   if (!guest) return;
   const room = roomOfGuest(guest);
-  await appAlert(`Nama: ${guest.name}\nKamar: ${roomLabel(room)}\nCI: ${guest.checkinDate}\nLama: ${stayDays(guest.checkinDate)} hari\nKeperluan: ${guest.purpose}\nCatatan: ${guest.note || '-'}`, 'Detail Stay');
+  await appAlert(`Nama: ${guest.name}\nSite: ${guest.site || '-'}\nKamar: ${roomLabel(room)}\nCI: ${guest.checkinDate}\nLama: ${stayDays(guest.checkinDate)} hari\nKeperluan: ${guest.purpose}\nCatatan: ${guest.note || '-'}`, 'Detail Stay');
 }
 
 async function updateGuestNote(guestId) {
@@ -148,28 +151,28 @@ async function checkoutGuest(guestId) {
 
 function renderCheckinReport() {
   const date = $('checkinReportDate')?.value || todayIso();
-  const rows = state.guests.filter((guest) => guest.checkinDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.purpose, guest.status]));
+  const rows = state.guests.filter((guest) => guest.checkinDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.site, guest.purpose, guest.status]));
   if ($('checkinReportTable')) {
     $('checkinReportTable').innerHTML = rows.length
-      ? rows.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.purpose || '-'}</td><td>${guest.checkinDate}</td><td>${badge(guest.status, guest.status === 'In House' ? 'danger' : 'ok')}</td></tr>`).join('')
-      : emptyRow(6, 'Tidak ada data check in pada tanggal ini');
+      ? rows.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.site || '-'}</td><td>${guest.purpose || '-'}</td><td>${guest.checkinDate}</td><td>${badge(guest.status, guest.status === 'In House' ? 'danger' : 'ok')}</td></tr>`).join('')
+      : emptyRow(7, 'Tidak ada data check in pada tanggal ini');
   }
 }
 
 function renderCheckoutMenu() {
-  const active = activeGuests().filter((guest) => matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.purpose, guest.mealEligible]));
+  const active = activeGuests().filter((guest) => matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.site, guest.purpose, guest.mealEligible]));
   if ($('checkoutCards')) {
     $('checkoutCards').innerHTML = active.length
-      ? active.map((guest) => `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(roomOfGuest(guest))} • ${guest.office || '-'}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>CI</b>${guest.checkinDate}</span><span><b>Lama</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose || '-'}</span><span><b>Makan</b>${guest.mealEligible || '-'}</span></div><div class="card-actions"><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`).join('')
+      ? active.map((guest) => `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(roomOfGuest(guest))} • ${guest.office || '-'} • ${guest.site || '-'}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>CI</b>${guest.checkinDate}</span><span><b>Lama</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose || '-'}</span><span><b>Makan</b>${guest.mealEligible || '-'}</span></div><div class="card-actions"><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`).join('')
       : '<div class="empty-card">Tidak ada penghuni yang bisa checkout.</div>';
   }
   const date = $('checkoutReportDate')?.value || todayIso();
-  const checkedOut = state.guests.filter((guest) => guest.status === 'Check Out' && guest.checkoutDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.checkinDate, guest.checkoutDate]));
+  const checkedOut = state.guests.filter((guest) => guest.status === 'Check Out' && guest.checkoutDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.site, guest.checkinDate, guest.checkoutDate]));
   if ($('checkoutCountText')) $('checkoutCountText').textContent = `${checkedOut.length} data`;
   if ($('checkoutReportTable')) {
     $('checkoutReportTable').innerHTML = checkedOut.length
-      ? checkedOut.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.checkinDate}</td><td>${guest.checkoutDate}</td><td>${stayDays(guest.checkinDate, guest.checkoutDate)} hari</td></tr>`).join('')
-      : emptyRow(6, 'Tidak ada checkout pada tanggal ini');
+      ? checkedOut.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.site || '-'}</td><td>${guest.checkinDate}</td><td>${guest.checkoutDate}</td><td>${stayDays(guest.checkinDate, guest.checkoutDate)} hari</td></tr>`).join('')
+      : emptyRow(7, 'Tidak ada checkout pada tanggal ini');
   }
 }
 function initCheckinMenu() {
@@ -210,6 +213,7 @@ function initCheckinMenu() {
       position: employee.position,
       roomId: room.id,
       office: text($('guestOffice')?.value),
+      site: text($('guestSite')?.value) || employee.site || '',
       purpose,
       mealEligible: $('guestMealEligible')?.value || 'Ya',
       checkinDate: $('guestCheckinDate')?.value || todayIso(),

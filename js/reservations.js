@@ -8,6 +8,7 @@ function fillReservationEmployee(employee) {
   if ($('reservationLevel')) $('reservationLevel').value = employee.level || '';
   if ($('reservationPosition')) $('reservationPosition').value = employee.position || '';
   if ($('reservationOffice')) $('reservationOffice').value = employee.office || '';
+  if ($('reservationSite')) $('reservationSite').value = employee.site || '';
 }
 
 function handleReservationName() {
@@ -32,6 +33,7 @@ function reservationToGuestPayload(reservation, room, employee) {
     position: employee?.position || reservation.position || '',
     roomId: room.id,
     office: reservation.office || employee?.office || '',
+    site: reservation.site || employee?.site || '',
     purpose: reservation.purpose || '',
     mealEligible: reservation.mealEligible || 'Ya',
     checkinDate: todayIso(),
@@ -50,7 +52,7 @@ function convertReservationToCheckin(reservationId) {
   let employee = findEmployeeByName(reservation.name);
   if (employee && !isEmployeeActive(employee)) return alert('Reservasi tidak bisa check in karena status karyawan bukan Aktif.');
   if (!employee && reservation.name && reservation.nik) {
-    employee = createOrUpdateEmployee({ name: reservation.name, nik: reservation.nik, level: reservation.level, position: reservation.position, office: reservation.office, phone: '', status: 'Aktif' });
+    employee = createOrUpdateEmployee({ name: reservation.name, nik: reservation.nik, level: reservation.level, position: reservation.position, office: reservation.office, site: reservation.site, phone: '', status: 'Aktif' });
     saveData(STORAGE_KEYS.employees, state.employees);
   }
   state.guests.push({ id: uid(), ...reservationToGuestPayload(reservation, room, employee), createdAt: new Date().toISOString() });
@@ -79,14 +81,14 @@ function renderReservations() {
   if ($('reservationDate') && !$('reservationDate').value) $('reservationDate').value = todayIso();
   const reservations = state.reservations.slice().reverse().filter((reservation) => {
     const room = state.rooms.find((item) => item.id === reservation.roomId);
-    return matchesSearch([reservation.name, reservation.nik, reservation.office, reservation.purpose, reservation.status, roomLabel(room)]);
+    return matchesSearch([reservation.name, reservation.nik, reservation.office, reservation.site, reservation.purpose, reservation.status, roomLabel(room)]);
   });
   if ($('reservationCountText')) $('reservationCountText').textContent = `${reservations.length} data`;
   if (!$('reservationCards')) return;
   $('reservationCards').innerHTML = reservations.length ? reservations.map((reservation) => {
     const room = state.rooms.find((item) => item.id === reservation.roomId);
     const canCheckin = reservation.status === 'Reserved';
-    return `<article class="guest-card"><div class="guest-card-head"><div><h3>${reservation.name}</h3><p>${room ? roomLabel(room) : 'Belum pilih kamar'} • ${reservation.office || '-'}</p></div>${badge(reservation.status, reservationStatusClass(reservation.status))}</div><div class="guest-info"><span><b>NIK</b>${reservation.nik || '-'}</span><span><b>Tanggal</b>${reservation.reservationDate || '-'}</span><span><b>Keperluan</b>${reservation.purpose || '-'}</span><span><b>Makan</b>${reservation.mealEligible || '-'}</span></div>${reservation.note ? `<p class="note-text">${reservation.note}</p>` : ''}<div class="card-actions">${canCheckin ? `<button class="primary-btn" onclick="convertReservationToCheckin('${reservation.id}')">Check In</button><button class="secondary-btn no-margin" onclick="setReservationStatus('${reservation.id}','No Show')">No Show</button><button class="danger-btn" onclick="setReservationStatus('${reservation.id}','Cancelled')">Cancel</button>` : ''}</div></article>`;
+    return `<article class="guest-card"><div class="guest-card-head"><div><h3>${reservation.name}</h3><p>${room ? roomLabel(room) : 'Belum pilih kamar'} • ${reservation.office || '-'} • ${reservation.site || '-'}</p></div>${badge(reservation.status, reservationStatusClass(reservation.status))}</div><div class="guest-info"><span><b>NIK</b>${reservation.nik || '-'}</span><span><b>Tanggal</b>${reservation.reservationDate || '-'}</span><span><b>Site</b>${reservation.site || '-'}</span><span><b>Keperluan</b>${reservation.purpose || '-'}</span><span><b>Makan</b>${reservation.mealEligible || '-'}</span></div>${reservation.note ? `<p class="note-text">${reservation.note}</p>` : ''}<div class="card-actions">${canCheckin ? `<button class="primary-btn" onclick="convertReservationToCheckin('${reservation.id}')">Check In</button><button class="secondary-btn no-margin" onclick="setReservationStatus('${reservation.id}','No Show')">No Show</button><button class="danger-btn" onclick="setReservationStatus('${reservation.id}','Cancelled')">Cancel</button>` : ''}</div></article>`;
   }).join('') : '<div class="empty-card">Belum ada reservasi.</div>';
 }
 
@@ -101,7 +103,7 @@ function initReservationsMenu() {
     const employee = findEmployeeByName($('reservationName')?.value);
     state.reservations.push({
       id: uid(), employeeId: employee?.id || '', name: text($('reservationName')?.value), nik: text($('reservationNik')?.value) || employee?.nik || '',
-      level: text($('reservationLevel')?.value) || employee?.level || '', position: text($('reservationPosition')?.value) || employee?.position || '', office: text($('reservationOffice')?.value) || employee?.office || '',
+      level: text($('reservationLevel')?.value) || employee?.level || '', position: text($('reservationPosition')?.value) || employee?.position || '', office: text($('reservationOffice')?.value) || employee?.office || '', site: text($('reservationSite')?.value) || employee?.site || '',
       roomId: $('reservationRoom')?.value || '', purpose, mealEligible: $('reservationMealEligible')?.value || 'Ya', reservationDate: $('reservationDate')?.value || todayIso(),
       note: text($('reservationNote')?.value), status: 'Reserved', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     });

@@ -1,6 +1,6 @@
 function employeeTemplateRows() {
   return [
-    { nama: 'Andi Saputra', nik: 'EMP001', jabatan: 'Staff', posisi: 'Cleaning Service Officer', office: 'Office Balikpapan', no_hp: '081234567890', status: 'Aktif' },
+    { nama: 'Andi Saputra', nik: 'EMP001', jabatan: 'Staff', posisi: 'Cleaning Service Officer', office: 'Office Balikpapan', site: 'Site Melak', no_hp: '081234567890', status: 'Aktif' },
   ];
 }
 
@@ -11,6 +11,7 @@ function employeeExportRows() {
     jabatan: employee.level,
     posisi: employee.position,
     office: employee.office,
+    site: employee.site || '',
     no_hp: employee.phone || '',
     status: normalizeEmployeeStatus(employee.status),
   }));
@@ -29,6 +30,7 @@ function importEmployees(rows) {
       level: text(row.jabatan || row.level || 'Staff'),
       position: text(row.posisi || row.position),
       office: text(row.office || row.nama_office),
+      site: text(row.site || row.lokasi || row.lokasi_penempatan || row.penempatan),
       phone: text(row.no_hp || row.phone || row.nohp),
       status: normalizeEmployeeStatus(row.status || row.Status || row.employee_status),
     });
@@ -57,12 +59,12 @@ function handleEmployeeFileUpload(event) {
 }
 
 function renderEmployees() {
-  const employees = state.employees.filter((employee) => matchesSearch([employee.name, employee.nik, employee.level, employee.position, employee.office, employee.phone, normalizeEmployeeStatus(employee.status)]));
+  const employees = state.employees.filter((employee) => matchesSearch([employee.name, employee.nik, employee.level, employee.position, employee.office, employee.site, employee.phone, normalizeEmployeeStatus(employee.status)]));
   if ($('employeeCountText')) $('employeeCountText').textContent = `${employees.length} data`;
   if ($('employeeTable')) {
     $('employeeTable').innerHTML = employees.length
-      ? employees.map((employee) => `<tr><td>${employee.name}</td><td>${employee.nik}</td><td>${employee.level}</td><td>${employee.position}</td><td>${employee.office}</td><td>${employee.phone || '-'}</td><td>${badge(normalizeEmployeeStatus(employee.status), isEmployeeActive(employee) ? 'ok' : 'danger')}</td></tr>`).join('')
-      : emptyRow(7, 'Belum ada data karyawan');
+      ? employees.map((employee) => `<tr><td>${employee.name}</td><td>${employee.nik}</td><td>${employee.level}</td><td>${employee.position}</td><td>${employee.office}</td><td>${employee.site || '-'}</td><td>${employee.phone || '-'}</td><td>${badge(normalizeEmployeeStatus(employee.status), isEmployeeActive(employee) ? 'ok' : 'danger')}</td></tr>`).join('')
+      : emptyRow(8, 'Belum ada data karyawan');
   }
   if ($('employeeNames')) {
     $('employeeNames').innerHTML = state.employees.filter(isEmployeeActive).map((employee) => `<option value="${employee.name}"></option>`).join('');
@@ -78,6 +80,7 @@ function initEmployeesMenu() {
       level: $('employeeLevel')?.value || 'Staff',
       position: text($('employeePosition')?.value),
       office: text($('employeeOffice')?.value),
+      site: text($('employeeSite')?.value),
       phone: text($('employeePhone')?.value),
       status: normalizeEmployeeStatus($('employeeStatus')?.value),
     });
