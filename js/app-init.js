@@ -13,6 +13,7 @@ function initApp() {
   initNavigation();
   if (typeof prepareRoomMenuUi === 'function') prepareRoomMenuUi();
   initRoomsMenu();
+  if (typeof initReservationsMenu === 'function') initReservationsMenu();
   initEmployeesMenu();
   initCheckinMenu();
   initMealsMenu();
