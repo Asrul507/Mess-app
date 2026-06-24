@@ -64,6 +64,12 @@ body {
   padding-bottom: 32px;
 }
 
+.grouped-nav .nav-btn::before,
+.nav-btn::before {
+  content: none !important;
+  display: none !important;
+}
+
 .nav-btn,
 .mobile-quick-nav button,
 .back-btn {
