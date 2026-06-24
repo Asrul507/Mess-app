@@ -2,7 +2,7 @@ function loadLayoutFixes() {
   if (document.querySelector('link[data-layout-fixes]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'layout-fixes.css?v=18';
+  link.href = 'layout-fixes.css?v=19';
   link.dataset.layoutFixes = 'true';
   document.head.appendChild(link);
 }
@@ -34,6 +34,7 @@ function navIconClass(button) {
   if (page === 'inhouse') return 'fa-house-user';
   if (page === 'checkout') return 'fa-right-from-bracket';
   if (page === 'reservations') return 'fa-calendar-check';
+  if (page === 'forecast') return 'fa-chart-line';
   if (page === 'meal') return 'fa-utensils';
   if (page === 'meal-report') return 'fa-file-lines';
   if (page === 'employees') return 'fa-users';
@@ -41,6 +42,7 @@ function navIconClass(button) {
   if (page === 'rooms' && roomOpen === 'status') return 'fa-door-open';
   if (page === 'rooms' && roomOpen === 'broken') return 'fa-screwdriver-wrench';
   if (page === 'rooms' && roomOpen === 'add') return 'fa-square-plus';
+  if (label.includes('forecast')) return 'fa-chart-line';
   if (label.includes('check in')) return 'fa-right-to-bracket';
   if (label.includes('in house')) return 'fa-house-user';
   if (label.includes('absen')) return 'fa-utensils';
@@ -438,6 +440,7 @@ async function initApp() {
   saveData(STORAGE_KEYS.purposes, state.purposes);
 
   initNavigation();
+  if (typeof initForecastMenu === 'function') initForecastMenu();
   decorateAppIcons();
   if (typeof prepareRoomMenuUi === 'function') prepareRoomMenuUi();
   initRoomsMenu();
