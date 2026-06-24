@@ -304,6 +304,12 @@ function goBackPage() {
   showPage(previous);
 }
 
+function goBackPage() {
+  const previous = navigationHistory.pop() || 'dashboard';
+  suppressHistory = true;
+  showPage(previous);
+}
+
 function downloadWorkbook(filename, rows, sheetName) {
   if (!window.XLSX) return alert('Library Excel belum tersedia.');
   const worksheet = XLSX.utils.json_to_sheet(rows);
