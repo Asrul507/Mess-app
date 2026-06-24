@@ -2,6 +2,10 @@ function initNavigation() {
   document.querySelectorAll('.nav-btn').forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.page, button.textContent));
   });
+  $('backBtn')?.addEventListener('click', goBackPage);
+  document.querySelectorAll('[data-quick-page]').forEach((button) => {
+    button.addEventListener('click', () => showPage(button.dataset.quickPage, button.textContent));
+  });
 }
 
 function initApp() {
@@ -13,6 +17,7 @@ function initApp() {
   initNavigation();
   if (typeof prepareRoomMenuUi === 'function') prepareRoomMenuUi();
   initRoomsMenu();
+  if (typeof initReservationsMenu === 'function') initReservationsMenu();
   initEmployeesMenu();
   initCheckinMenu();
   initMealsMenu();

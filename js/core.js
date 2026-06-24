@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   guests: 'messapp_guests',
   meals: 'messapp_meals',
   purposes: 'messapp_purposes',
+  reservations: 'messapp_reservations',
 };
 
 const DEFAULT_PURPOSES = ['Cuti', 'On Site', 'Dinas', 'New Hire Onsite', 'New Hire MCU', 'MCU Tahunan', 'Long Stay'];
@@ -15,10 +16,75 @@ const state = {
   guests: loadData(STORAGE_KEYS.guests, []),
   meals: loadData(STORAGE_KEYS.meals, []),
   purposes: loadData(STORAGE_KEYS.purposes, DEFAULT_PURPOSES),
+  reservations: loadData(STORAGE_KEYS.reservations, []),
 };
 
 let pendingCheckinEmployeeName = '';
 let editingGuestId = null;
+
+const navigationHistory = ['dashboard'];
+let suppressHistory = false;
+
+function appModalElements() {
+  return {
+    modal: $('appModal'),
+    title: $('appModalTitle'),
+    message: $('appModalMessage'),
+    input: $('appModalInput'),
+    actions: $('appModalActions'),
+    icon: $('appModalIcon'),
+  };
+}
+
+function showAppModal({ title = 'Notifikasi', message = '', type = 'info', input = false, inputValue = '', confirmText = 'OK', cancelText = '' } = {}) {
+  const elements = appModalElements();
+  if (!elements.modal || !elements.actions) return Promise.resolve(input ? inputValue : true);
+  elements.title.textContent = title;
+  elements.message.textContent = message;
+  elements.icon.textContent = type === 'danger' ? '!' : type === 'confirm' ? '?' : 'i';
+  elements.icon.className = `app-modal-icon ${type}`;
+  elements.input.classList.toggle('hidden', !input);
+  elements.input.value = inputValue || '';
+  elements.actions.innerHTML = '';
+  elements.modal.classList.remove('hidden');
+  if (input) setTimeout(() => elements.input.focus(), 30);
+
+  return new Promise((resolve) => {
+    const close = (value) => {
+      elements.modal.classList.add('hidden');
+      resolve(value);
+    };
+    if (cancelText) {
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'secondary-btn no-margin';
+      cancel.textContent = cancelText;
+      cancel.addEventListener('click', () => close(input ? null : false));
+      elements.actions.appendChild(cancel);
+    }
+    const ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = type === 'danger' ? 'danger-btn' : 'primary-btn';
+    ok.textContent = confirmText;
+    ok.addEventListener('click', () => close(input ? elements.input.value : true));
+    elements.actions.appendChild(ok);
+  });
+}
+
+function appAlert(message, title = 'Notifikasi', type = 'info') {
+  return showAppModal({ title, message, type, confirmText: 'Mengerti' });
+}
+
+function appConfirm(message, title = 'Konfirmasi') {
+  return showAppModal({ title, message, type: 'confirm', confirmText: 'Ya, lanjutkan', cancelText: 'Batal' });
+}
+
+function appPrompt(message, defaultValue = '', title = 'Input') {
+  return showAppModal({ title, message, type: 'info', input: true, inputValue: defaultValue, confirmText: 'Simpan', cancelText: 'Batal' });
+}
+
+// Keep legacy alert() calls themed without relying on browser UI.
+window.alert = (message) => { appAlert(String(message || '')); };
 
 function $(id) {
   return document.getElementById(id);
@@ -84,6 +150,10 @@ function roomLabel(room) {
 
 function activeGuests() {
   return state.guests.filter((guest) => guest.status === 'In House');
+}
+
+function reservationStatusClass(status) {
+  return { Reserved: 'warn', 'Checked In': 'ok', Cancelled: 'muted', 'No Show': 'danger' }[status] || 'muted';
 }
 
 function roomOfGuest(guest) {
@@ -182,6 +252,9 @@ function addPurpose(value) {
 }
 
 function showPage(pageId, title = '') {
+  const current = document.querySelector('.page.active')?.id;
+  if (!suppressHistory && current && current !== pageId) navigationHistory.push(current);
+  suppressHistory = false;
   document.querySelectorAll('.nav-btn').forEach((button) => {
     button.classList.toggle('active', button.dataset.page === pageId);
   });
@@ -190,6 +263,12 @@ function showPage(pageId, title = '') {
   });
   const pageTitle = $('pageTitle');
   if (pageTitle) pageTitle.textContent = title || document.querySelector(`[data-page="${pageId}"]`)?.textContent || '';
+}
+
+function goBackPage() {
+  const previous = navigationHistory.pop() || 'dashboard';
+  suppressHistory = true;
+  showPage(previous);
 }
 
 function downloadWorkbook(filename, rows, sheetName) {
@@ -223,6 +302,7 @@ function renderAll() {
   if (typeof renderDashboard === 'function') renderDashboard();
   if (typeof renderRooms === 'function') renderRooms();
   if (typeof renderEmployees === 'function') renderEmployees();
+  if (typeof renderReservations === 'function') renderReservations();
   if (typeof renderCheckin === 'function') renderCheckin();
   if (typeof renderInhouse === 'function') renderInhouse();
   if (typeof renderMeals === 'function') renderMeals();

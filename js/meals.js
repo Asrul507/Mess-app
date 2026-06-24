@@ -53,4 +53,9 @@ function initMealsMenu() {
   if ($('mealReportDate')) $('mealReportDate').value = todayIso();
   $('mealQuickDate')?.addEventListener('change', renderMeals);
   $('mealReportDate')?.addEventListener('change', renderMeals);
+  $('downloadMealReport')?.addEventListener('click', () => {
+    const reportDate = $('mealReportDate')?.value;
+    const rows = state.meals.filter((meal) => !reportDate || meal.date === reportDate);
+    downloadWorkbook('rekap-absen-makan-mess.xlsx', rows, 'Rekap Makan');
+  });
 }

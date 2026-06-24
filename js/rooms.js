@@ -111,7 +111,7 @@ function updateRoomPreview() {
 
 function setRoomFormBusy(isBusy) {
   const loading = ensureRoomGeneratorLoading();
-  const button = document.querySelector('#roomForm button[type="submit"]');
+  const button = $('saveRoomBtn') || document.querySelector('#roomForm button[type="submit"]');
   if (loading) loading.classList.toggle('hidden', !isBusy);
   if (button) {
     button.disabled = isBusy;

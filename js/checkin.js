@@ -65,7 +65,7 @@ function renderInhouse() {
     ? guests.map((guest) => {
       const room = roomOfGuest(guest);
       const employee = employeeOfGuest(guest);
-      return `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>Jabatan</b>${employee.level || guest.level || '-'}</span><span><b>Posisi</b>${employee.position || guest.position || '-'}</span><span><b>Tgl CI</b>${guest.checkinDate}</span><span><b>Lama Menginap</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose}</span><span><b>Makan</b>${guest.mealEligible}</span></div>${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}<div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`;
+      return `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(room)} • ${guest.office}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>Jabatan</b>${employee.level || guest.level || '-'}</span><span><b>Posisi</b>${employee.position || guest.position || '-'}</span><span><b>Tgl CI</b>${guest.checkinDate}</span><span><b>Lama Menginap</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose}</span><span><b>Makan</b>${guest.mealEligible}</span></div>${guest.note ? `<p class="note-text">${guest.note}</p>` : ''}<div class="card-actions"><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Edit</button><button class="secondary-btn no-margin" onclick="editGuest('${guest.id}')">Pindah Kamar</button><button class="secondary-btn no-margin" onclick="updateGuestNote('${guest.id}')">Catatan</button><button class="mini-btn" onclick="detailGuest('${guest.id}')">Detail Stay</button><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`;
     }).join('')
     : '<div class="empty-card">Belum ada penghuni In House.</div>';
 }
@@ -89,20 +89,27 @@ function editGuest(guestId) {
   showPage('checkin', 'Edit In House');
 }
 
-function updateGuestNote(guestId) {
+async function detailGuest(guestId) {
   const guest = state.guests.find((item) => item.id === guestId);
   if (!guest) return;
-  const note = prompt(`Catatan untuk ${guest.name}`, guest.note || '');
+  const room = roomOfGuest(guest);
+  await appAlert(`Nama: ${guest.name}\nKamar: ${roomLabel(room)}\nCI: ${guest.checkinDate}\nLama: ${stayDays(guest.checkinDate)} hari\nKeperluan: ${guest.purpose}\nCatatan: ${guest.note || '-'}`, 'Detail Stay');
+}
+
+async function updateGuestNote(guestId) {
+  const guest = state.guests.find((item) => item.id === guestId);
+  if (!guest) return;
+  const note = await appPrompt(`Catatan untuk ${guest.name}`, guest.note || '', 'Tambah Catatan');
   if (note === null) return;
   guest.note = text(note);
   saveData(STORAGE_KEYS.guests, state.guests);
   renderAll();
 }
 
-function checkoutGuest(guestId) {
+async function checkoutGuest(guestId) {
   const guest = state.guests.find((item) => item.id === guestId);
   if (!guest) return;
-  if (!confirm(`Check out ${guest.name} hari ini?`)) return;
+  if (!await appConfirm(`Check out ${guest.name} hari ini? Kamar akan otomatis menjadi kotor.`, 'Konfirmasi Check Out')) return;
   guest.status = 'Check Out';
   guest.checkoutDate = todayIso();
   const room = roomOfGuest(guest);
@@ -130,7 +137,9 @@ function initCheckinMenu() {
     const room = state.rooms.find((item) => item.id === $('guestRoom')?.value);
 
     if (!employee) return alert('Nama karyawan belum ada di database.');
-    if (!room || room.status !== 'bersih' || roomOccupant(room.id)) return alert('Kamar tidak tersedia. Pilih kamar bersih yang kosong.');
+    const existingGuest = editingGuestId ? state.guests.find((guest) => guest.id === editingGuestId) : null;
+    const isCurrentRoom = existingGuest && existingGuest.roomId === room?.id;
+    if (!room || (!isCurrentRoom && (room.status !== 'bersih' || roomOccupant(room.id)))) return alert('Kamar tidak tersedia. Pilih kamar bersih yang kosong.');
 
     const purpose = text($('guestPurpose')?.value);
     addPurpose(purpose);
@@ -154,7 +163,14 @@ function initCheckinMenu() {
 
     if (editingGuestId) {
       const index = state.guests.findIndex((guest) => guest.id === editingGuestId);
-      if (index >= 0) state.guests[index] = { ...state.guests[index], ...data };
+      if (index >= 0) {
+        const oldRoomId = state.guests[index].roomId;
+        state.guests[index] = { ...state.guests[index], ...data };
+        if (oldRoomId && oldRoomId !== room.id) {
+          const oldRoom = state.rooms.find((item) => item.id === oldRoomId);
+          if (oldRoom && !roomOccupant(oldRoom.id)) oldRoom.status = 'kotor';
+        }
+      }
       editingGuestId = null;
     } else {
       state.guests.push({ id: uid(), ...data, createdAt: new Date().toISOString() });
