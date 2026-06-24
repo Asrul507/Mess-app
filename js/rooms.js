@@ -111,7 +111,7 @@ function updateRoomPreview() {
 
 function setRoomFormBusy(isBusy) {
   const loading = ensureRoomGeneratorLoading();
-  const button = document.querySelector('#roomForm button[type="submit"]');
+  const button = $('saveRoomBtn') || document.querySelector('#roomForm button[type="submit"]');
   if (loading) loading.classList.toggle('hidden', !isBusy);
   if (button) {
     button.disabled = isBusy;
@@ -160,7 +160,7 @@ function getRoomFilter() {
 
 function getFilteredRooms() {
   const filter = getRoomFilter();
-  return state.rooms.filter((room) => filter === 'all' || room.status === filter);
+  return sortedRooms(state.rooms).filter((room) => (filter === 'all' || room.status === filter) && matchesSearch([roomLabel(room), room.type, room.status, room.building, roomOccupant(room.id)?.name]));
 }
 
 function selectedRoomIds() {
@@ -258,12 +258,21 @@ function renderDashboard() {
 
 function renderRooms() {
   if ($('roomCountText')) $('roomCountText').textContent = `${state.rooms.length} data`;
-  if ($('roomOverviewGrid')) $('roomOverviewGrid').innerHTML = state.rooms.map((room) => { const occupant = roomOccupant(room.id); return `<div class="room-card ${room.status}"><div><strong>${roomLabel(room)}</strong><p>${room.type}</p></div>${statusBadge(room.status)}<small>${occupant ? occupant.name : 'Kosong'}</small></div>`; }).join('');
+  if ($('roomOverviewGrid')) $('roomOverviewGrid').innerHTML = sortedRooms(state.rooms).filter((room) => matchesSearch([roomLabel(room), room.type, room.status, room.building, roomOccupant(room.id)?.name])).map((room) => { const occupant = roomOccupant(room.id); return `<div class="room-card ${room.status}"><div><strong>${roomLabel(room)}</strong><p>${room.type}</p></div>${statusBadge(room.status)}<small>${occupant ? occupant.name : 'Kosong'}</small></div>`; }).join('');
   const filtered = getFilteredRooms();
   if ($('roomStatusTable')) $('roomStatusTable').innerHTML = filtered.length ? filtered.map((room) => { const occupant = roomOccupant(room.id); return `<tr><td><label class="check-cell"><input type="checkbox" class="room-check" value="${room.id}"> ${roomLabel(room)}</label></td><td>${room.type}</td><td>${statusBadge(room.status)}</td><td>${occupant ? occupant.name : '-'}</td><td><div class="button-row"><button class="mini-btn" onclick="setRoomStatus('${room.id}','bersih')">Bersih</button><button class="mini-btn" onclick="setRoomStatus('${room.id}','kotor')">Kotor</button><button class="danger-btn" onclick="setRoomStatus('${room.id}','rusak')">Rusak</button></div></td></tr>`; }).join('') : emptyRow(5, 'Tidak ada kamar sesuai filter');
-  const brokenRooms = state.rooms.filter((room) => room.status === 'rusak');
+  const brokenRooms = sortedRooms(state.rooms).filter((room) => room.status === 'rusak' && matchesSearch([roomLabel(room), room.type, room.status, room.building]));
   if ($('brokenRoomCountText')) $('brokenRoomCountText').textContent = `${brokenRooms.length} rusak`;
   if ($('brokenRoomCards')) $('brokenRoomCards').innerHTML = brokenRooms.length ? brokenRooms.map((room) => `<div class="guest-card"><div class="guest-card-head"><div><h3>${roomLabel(room)}</h3><p>${room.type}</p></div>${statusBadge(room.status)}</div><p class="note-text">Tidak tampil di pilihan check in.</p><div class="card-actions"><button class="secondary-btn no-margin" onclick="setRoomStatus('${room.id}','kotor')">Set Kotor</button><button class="primary-btn" onclick="setRoomStatus('${room.id}','bersih')">Set Bersih</button></div></div>`).join('') : '<div class="empty-card">Tidak ada kamar rusak.</div>';
+}
+
+
+function openRoomTab(tabName = 'overview') {
+  currentRoomTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach((item) => item.classList.toggle('active', item.dataset.roomTab === tabName));
+  document.querySelectorAll('.room-tab').forEach((tab) => tab.classList.remove('active'));
+  const targetTab = $(`roomTab${tabName[0].toUpperCase()}${tabName.slice(1)}`);
+  if (targetTab) targetTab.classList.add('active');
 }
 
 function initRoomsMenu() {
@@ -301,11 +310,7 @@ function initRoomsMenu() {
   $('downloadRoomData') && $('downloadRoomData').addEventListener('click', () => downloadWorkbook('data-kamar-mess.xlsx', roomExportRows(), 'Data Kamar'));
   document.querySelectorAll('.tab-btn').forEach((button) => {
     button.addEventListener('click', () => {
-      currentRoomTab = button.dataset.roomTab;
-      document.querySelectorAll('.tab-btn').forEach((item) => item.classList.toggle('active', item === button));
-      document.querySelectorAll('.room-tab').forEach((tab) => tab.classList.remove('active'));
-      const targetTab = $(`roomTab${currentRoomTab[0].toUpperCase()}${currentRoomTab.slice(1)}`);
-      if (targetTab) targetTab.classList.add('active');
+      openRoomTab(button.dataset.roomTab);
     });
   });
   updateRoomPreview();
