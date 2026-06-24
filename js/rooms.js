@@ -1,4 +1,5 @@
 let currentRoomTab = 'overview';
+let selectedRoomDetailId = '';
 
 function bedCodeFromIndex(index) {
   let result = '';
@@ -264,23 +265,34 @@ function roomStayHistory(roomId) {
     .sort((a, b) => text(b.checkinDate).localeCompare(text(a.checkinDate)));
 }
 
-async function showRoomDetail(roomId) {
-  const room = state.rooms.find((item) => item.id === roomId);
+function showRoomDetail(roomId) {
+  selectedRoomDetailId = roomId;
+  renderRoomDetailPage();
+  showPage('room-detail', 'Detail Kamar');
+}
+
+function renderRoomDetailPage() {
+  const room = state.rooms.find((item) => item.id === selectedRoomDetailId);
   if (!room) return;
-  const occupant = roomOccupant(roomId);
-  const history = roomStayHistory(roomId);
-  const lines = [
-    `Kamar: ${roomLabel(room)}`,
-    `Tipe: ${room.type || '-'}`,
-    `Status: ${room.status || '-'}`,
-    `Gedung: ${room.building || '-'}`,
-    occupant ? `Terisi oleh: ${occupant.name}` : 'Terisi oleh: -',
-    occupant ? `CI: ${occupant.checkinDate} (${stayDays(occupant.checkinDate)} hari)` : 'CI: -',
-    '',
-    'Riwayat penghuni:',
-    ...(history.length ? history.map((guest) => `• ${guest.name} | CI ${guest.checkinDate || '-'} | CO ${guest.checkoutDate || '-'} | ${guest.status}`) : ['Belum ada riwayat.']),
-  ];
-  await appAlert(lines.join('\n'), `Detail ${roomLabel(room)}`);
+  const occupant = roomOccupant(room.id);
+  const history = roomStayHistory(room.id);
+  if ($('roomDetailTitle')) $('roomDetailTitle').textContent = `Detail Kamar ${roomLabel(room)}`;
+  if ($('roomDetailSummary')) {
+    $('roomDetailSummary').innerHTML = `
+      <div class="room-detail-tile"><b>No Kamar</b><span>${roomLabel(room)}</span></div>
+      <div class="room-detail-tile"><b>Tipe</b><span>${room.type || '-'}</span></div>
+      <div class="room-detail-tile"><b>Status</b><span>${statusBadge(room.status)}</span></div>
+      <div class="room-detail-tile"><b>Gedung</b><span>${room.building || '-'}</span></div>
+      <div class="room-detail-tile"><b>Penghuni</b><span>${occupant ? occupant.name : '-'}</span></div>
+      <div class="room-detail-tile"><b>CI / Durasi</b><span>${occupant ? `${occupant.checkinDate} • ${stayDays(occupant.checkinDate)} hari` : '-'}</span></div>
+    `;
+  }
+  if ($('roomDetailHistoryCount')) $('roomDetailHistoryCount').textContent = `${history.length} data`;
+  if ($('roomDetailHistoryTable')) {
+    $('roomDetailHistoryTable').innerHTML = history.length
+      ? history.map((guest) => `<tr><td>${guest.name}</td><td>${guest.nik || '-'}</td><td>${guest.office || '-'}</td><td>${guest.site || '-'}</td><td>${guest.purpose || '-'}</td><td>${guest.checkinDate || '-'}</td><td>${guest.checkoutDate || '-'}</td><td>${stayDays(guest.checkinDate, guest.checkoutDate)} hari</td><td>${badge(guest.status, guest.status === 'Check Out' ? 'ok' : 'danger')}</td></tr>`).join('')
+      : emptyRow(9, 'Belum ada riwayat tamu untuk kamar ini');
+  }
 }
 
 function renderRooms() {

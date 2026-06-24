@@ -181,10 +181,10 @@ function renderCheckinReport() {
 
 function renderCheckoutMenu() {
   const active = activeGuests().filter((guest) => matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.site, guest.purpose, guest.borrowedItem, guest.mealEligible]));
-  if ($('checkoutCards')) {
-    $('checkoutCards').innerHTML = active.length
-      ? active.map((guest) => `<article class="guest-card"><div class="guest-card-head"><div><h3>${guest.name}</h3><p>${roomLabel(roomOfGuest(guest))} • ${guest.office || '-'} • ${guest.site || '-'}</p></div>${badge('In House', 'danger')}</div><div class="guest-info"><span><b>CI</b>${guest.checkinDate}</span><span><b>Lama</b>${stayDays(guest.checkinDate)} hari</span><span><b>Keperluan</b>${guest.purpose || '-'}</span><span><b>Barang</b>${borrowedItemLabel(guest)}</span><span><b>Makan</b>${guest.mealEligible || '-'}</span></div><div class="card-actions"><button class="danger-btn" onclick="checkoutGuest('${guest.id}')">Check Out</button></div></article>`).join('')
-      : '<div class="empty-card">Tidak ada penghuni yang bisa checkout.</div>';
+  if ($('checkoutTable')) {
+    $('checkoutTable').innerHTML = active.length
+      ? active.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.site || '-'}</td><td>${borrowedItemLabel(guest)}</td><td>${guest.checkinDate}</td><td>${stayDays(guest.checkinDate)} hari</td><td><button class="danger-btn no-margin" onclick="checkoutGuest('${guest.id}')">Check Out</button></td></tr>`).join('')
+      : emptyRow(8, 'Tidak ada penghuni yang bisa checkout');
   }
   const date = $('checkoutReportDate')?.value || todayIso();
   const checkedOut = state.guests.filter((guest) => guest.status === 'Check Out' && guest.checkoutDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.site, guest.borrowedItem, guest.checkinDate, guest.checkoutDate]));

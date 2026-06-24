@@ -223,3 +223,9 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 .row-menu-list button:hover { background: #eff6ff; color: var(--primary-dark); }
 .row-menu-list .danger-text { color: #991b1b; }
 @media (max-width: 760px) { .row-menu { justify-self: stretch; } .dots-btn { width: 100%; } .row-menu-list { left: 0; right: 0; } }
+
+.room-detail-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.room-detail-tile { border: 1px solid var(--border); border-radius: 16px; padding: 14px; background: #fbfdff; display: grid; gap: 6px; }
+.room-detail-tile b { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.room-detail-tile span { font-weight: 900; }
+@media (max-width: 760px) { .room-detail-summary { grid-template-columns: 1fr; } }

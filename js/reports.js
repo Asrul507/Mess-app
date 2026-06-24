@@ -66,6 +66,7 @@ function reportBadgeClass(status) {
 }
 
 function renderReports() {
+  if (typeof renderStayReport === 'function') renderStayReport();
   const rows = guestReportRows();
   if (!$('guestReportTable')) return;
   $('guestReportTable').innerHTML = rows.length
@@ -73,10 +74,53 @@ function renderReports() {
     : emptyRow(14, 'Belum ada data laporan tamu');
 }
 
+
+function stayReportRows() {
+  const status = $('stayReportStatus')?.value || 'all';
+  const dateFrom = $('stayReportFrom')?.value || '';
+  const dateTo = $('stayReportTo')?.value || '';
+  return state.guests
+    .filter((guest) => status === 'all' || guest.status === status)
+    .filter((guest) => !dateFrom || guest.checkinDate >= dateFrom)
+    .filter((guest) => !dateTo || (guest.checkoutDate || todayIso()) <= dateTo)
+    .filter((guest) => matchesSearch([guest.status, guest.name, guest.nik, guest.level, guest.position, roomLabel(roomOfGuest(guest)), guest.office, guest.site, guest.purpose, guest.borrowedItem, guest.mealEligible, guest.checkinDate, guest.checkoutDate]))
+    .map((guest) => {
+      const employee = employeeOfGuest(guest);
+      return {
+        status: guest.status,
+        nama: guest.name,
+        nik: guest.nik || employee.nik || '',
+        jabatan: employee.level || guest.level || '',
+        posisi: employee.position || guest.position || '',
+        kamar: roomLabel(roomOfGuest(guest)),
+        office: guest.office || '',
+        site: guest.site || employee.site || '',
+        keperluan: guest.purpose || '',
+        pinjam_barang: typeof borrowedItemLabel === 'function' ? borrowedItemLabel(guest) : (guest.borrowedItem || ''),
+        makan: guest.mealEligible || '',
+        tanggal_ci: guest.checkinDate || '',
+        tanggal_co: guest.checkoutDate || '',
+        lama: `${stayDays(guest.checkinDate, guest.checkoutDate)} hari`,
+      };
+    });
+}
+
+function renderStayReport() {
+  const rows = stayReportRows();
+  if (!$('stayReportTable')) return;
+  $('stayReportTable').innerHTML = rows.length
+    ? rows.map((row) => `<tr><td>${badge(row.status, reportBadgeClass(row.status))}</td><td>${row.nama}</td><td>${row.nik}</td><td>${row.jabatan}</td><td>${row.posisi}</td><td>${row.kamar}</td><td>${row.office}</td><td>${row.site || '-'}</td><td>${row.keperluan}</td><td>${row.pinjam_barang || '-'}</td><td>${row.makan}</td><td>${row.tanggal_ci || '-'}</td><td>${row.tanggal_co || '-'}</td><td>${row.lama}</td></tr>`).join('')
+    : emptyRow(14, 'Tidak ada data menginap sesuai filter');
+}
+
 function initReportsMenu() {
   $('guestReportStatus')?.addEventListener('change', renderReports);
   $('guestReportDate')?.addEventListener('change', renderReports);
   $('downloadGuestReport')?.addEventListener('click', () => {
     downloadWorkbook('laporan-tamu-mess.xlsx', guestReportRows(), 'Laporan Tamu');
+  });
+  ['stayReportStatus', 'stayReportFrom', 'stayReportTo'].forEach((id) => $(id)?.addEventListener('change', renderStayReport));
+  $('downloadStayReport')?.addEventListener('click', () => {
+    downloadWorkbook('laporan-karyawan-menginap.xlsx', stayReportRows(), 'Laporan Menginap');
   });
 }

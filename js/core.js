@@ -295,6 +295,13 @@ function showPage(pageId, title = '') {
   });
   const pageTitle = $('pageTitle');
   if (pageTitle) pageTitle.textContent = title || document.querySelector(`[data-page="${pageId}"]`)?.textContent || '';
+  if (typeof renderAll === 'function') renderAll();
+}
+
+function goBackPage() {
+  const previous = navigationHistory.pop() || 'dashboard';
+  suppressHistory = true;
+  showPage(previous);
 }
 
 function goBackPage() {
@@ -333,6 +340,7 @@ function renderAll() {
   syncRoomStatuses();
   if (typeof renderDashboard === 'function') renderDashboard();
   if (typeof renderRooms === 'function') renderRooms();
+  if (typeof renderRoomDetailPage === 'function') renderRoomDetailPage();
   if (typeof renderEmployees === 'function') renderEmployees();
   if (typeof renderReservations === 'function') renderReservations();
   if (typeof renderCheckin === 'function') renderCheckin();
