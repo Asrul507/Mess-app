@@ -159,6 +159,42 @@ body {
   margin-top: 18px;
 }
 
+.forecast-filter-card {
+  margin-bottom: 18px;
+}
+
+.forecast-filter-card label {
+  min-width: 220px;
+}
+
+.forecast-cards .stat-card strong {
+  font-size: 34px;
+}
+
+.forecast-grid {
+  margin-bottom: 18px;
+}
+
+.forecast-occ {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+}
+
+.forecast-occ strong {
+  color: #1d4ed8;
+  font-size: 38px;
+}
+
+.forecast-occ span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .mobile-quick-nav {
   display: none !important;
 }
@@ -207,6 +243,10 @@ body {
 
   .repair-info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .forecast-occ strong {
+    font-size: 30px;
   }
 
   .topbar {
