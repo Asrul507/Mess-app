@@ -1,3 +1,12 @@
+function loadLayoutFixes() {
+  if (document.querySelector('link[data-layout-fixes]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'layout-fixes.css?v=14';
+  link.dataset.layoutFixes = 'true';
+  document.head.appendChild(link);
+}
+
 function initNavigation() {
   document.querySelectorAll('.nav-btn').forEach((button) => {
     button.addEventListener('click', () => {
@@ -15,6 +24,8 @@ function initNavigation() {
 }
 
 async function initApp() {
+  loadLayoutFixes();
+
   if ($('todayText')) $('todayText').textContent = formatDate();
 
   if (typeof initRemoteDataSync === 'function') await initRemoteDataSync();
