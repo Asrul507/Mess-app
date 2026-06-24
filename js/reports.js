@@ -113,6 +113,45 @@ function renderStayReport() {
     : emptyRow(14, 'Tidak ada data menginap sesuai filter');
 }
 
+function ensureCheckoutReportTable() {
+  const checkoutContainer = $('checkoutCards');
+  if (!checkoutContainer) return;
+
+  checkoutContainer.className = 'table-wrap';
+  checkoutContainer.innerHTML = `<table><thead><tr><th>Nama</th><th>Kamar</th><th>Office</th><th>Site</th><th>Keperluan</th><th>Pinjam Barang</th><th>Makan</th><th>CI</th><th>CO</th><th>Lama</th></tr></thead><tbody id="checkoutOnlyTable"></tbody></table>`;
+
+  const checkoutCard = checkoutContainer.closest('article');
+  const checkoutTitle = checkoutCard?.querySelector('.section-title h3');
+  const checkoutDesc = checkoutCard?.querySelector('.section-title p');
+  if (checkoutTitle) checkoutTitle.textContent = 'List Kamar Check Out';
+  if (checkoutDesc) checkoutDesc.textContent = 'Menampilkan kamar/tamu yang sudah check out sesuai filter tanggal.';
+
+  const oldReportTable = $('checkoutReportTable');
+  const oldReportCard = oldReportTable?.closest('article');
+  if (oldReportCard) oldReportCard.classList.add('hidden');
+}
+
+function renderCheckoutMenu() {
+  ensureCheckoutReportTable();
+
+  const date = $('checkoutReportDate')?.value || todayIso();
+  const checkedOut = state.guests.filter((guest) => guest.status === 'Check Out' && guest.checkoutDate === date && matchesSearch([guest.name, roomLabel(roomOfGuest(guest)), guest.office, guest.site, guest.purpose, guest.borrowedItem, guest.mealEligible, guest.checkinDate, guest.checkoutDate]));
+
+  if ($('checkoutCountText')) $('checkoutCountText').textContent = `${checkedOut.length} data`;
+
+  if ($('checkoutOnlyTable')) {
+    $('checkoutOnlyTable').innerHTML = checkedOut.length
+      ? checkedOut.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.site || '-'}</td><td>${guest.purpose || '-'}</td><td>${borrowedItemLabel(guest)}</td><td>${guest.mealEligible || '-'}</td><td>${guest.checkinDate || '-'}</td><td>${guest.checkoutDate || '-'}</td><td>${stayDays(guest.checkinDate, guest.checkoutDate)} hari</td></tr>`).join('')
+      : emptyRow(10, 'Tidak ada kamar/tamu check out pada tanggal ini');
+  }
+
+  if ($('checkoutReportTable')) {
+    $('checkoutReportTable').innerHTML = checkedOut.length
+      ? checkedOut.map((guest) => `<tr><td>${guest.name}</td><td>${roomLabel(roomOfGuest(guest))}</td><td>${guest.office || '-'}</td><td>${guest.site || '-'}</td><td>${borrowedItemLabel(guest)}</td><td>${guest.checkinDate}</td><td>${guest.checkoutDate}</td><td>${stayDays(guest.checkinDate, guest.checkoutDate)} hari</td></tr>`).join('')
+      : emptyRow(8, 'Tidak ada checkout pada tanggal ini');
+  }
+}
+
 function initReportsMenu() {
   $('guestReportStatus')?.addEventListener('change', renderReports);
   $('guestReportDate')?.addEventListener('change', renderReports);
