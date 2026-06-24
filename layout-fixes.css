@@ -101,6 +101,26 @@ body {
   height: 18px;
 }
 
+.move-room-card {
+  text-align: left;
+}
+
+.move-room-card .app-modal-icon,
+.move-room-card h3,
+.move-room-card p {
+  text-align: center;
+}
+
+.move-room-fields {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.move-room-fields textarea {
+  min-height: 96px;
+}
+
 .mobile-quick-nav {
   display: none !important;
 }
