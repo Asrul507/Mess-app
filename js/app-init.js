@@ -14,8 +14,10 @@ function initNavigation() {
   });
 }
 
-function initApp() {
+async function initApp() {
   if ($('todayText')) $('todayText').textContent = formatDate();
+
+  if (typeof initRemoteDataSync === 'function') await initRemoteDataSync();
 
   state.purposes = Array.from(new Set([...DEFAULT_PURPOSES, ...state.purposes]));
   saveData(STORAGE_KEYS.purposes, state.purposes);
