@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   guests: 'messapp_guests',
   meals: 'messapp_meals',
   purposes: 'messapp_purposes',
+  reservations: 'messapp_reservations',
 };
 
 const DEFAULT_PURPOSES = ['Cuti', 'On Site', 'Dinas', 'New Hire Onsite', 'New Hire MCU', 'MCU Tahunan', 'Long Stay'];
@@ -15,6 +16,7 @@ const state = {
   guests: loadData(STORAGE_KEYS.guests, []),
   meals: loadData(STORAGE_KEYS.meals, []),
   purposes: loadData(STORAGE_KEYS.purposes, DEFAULT_PURPOSES),
+  reservations: loadData(STORAGE_KEYS.reservations, []),
 };
 
 let pendingCheckinEmployeeName = '';
@@ -84,6 +86,10 @@ function roomLabel(room) {
 
 function activeGuests() {
   return state.guests.filter((guest) => guest.status === 'In House');
+}
+
+function reservationStatusClass(status) {
+  return { Reserved: 'warn', 'Checked In': 'ok', Cancelled: 'muted', 'No Show': 'danger' }[status] || 'muted';
 }
 
 function roomOfGuest(guest) {
@@ -223,6 +229,7 @@ function renderAll() {
   if (typeof renderDashboard === 'function') renderDashboard();
   if (typeof renderRooms === 'function') renderRooms();
   if (typeof renderEmployees === 'function') renderEmployees();
+  if (typeof renderReservations === 'function') renderReservations();
   if (typeof renderCheckin === 'function') renderCheckin();
   if (typeof renderInhouse === 'function') renderInhouse();
   if (typeof renderMeals === 'function') renderMeals();
