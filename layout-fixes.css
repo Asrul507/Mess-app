@@ -64,6 +64,37 @@ body {
   padding-bottom: 32px;
 }
 
+.nav-btn,
+.mobile-quick-nav button,
+.back-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-btn i,
+.mobile-quick-nav button i,
+.back-btn i {
+  width: 18px;
+  min-width: 18px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.nav-btn span,
+.mobile-quick-nav button span,
+.back-btn span {
+  min-width: 0;
+}
+
+.global-search span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
 .mobile-quick-nav {
   display: none !important;
 }
@@ -98,6 +129,16 @@ body {
   .sidebar {
     width: 168px !important;
     min-width: 168px !important;
+  }
+
+  .nav-btn {
+    gap: 7px;
+  }
+
+  .nav-btn i {
+    width: 14px;
+    min-width: 14px;
+    font-size: 12px;
   }
 
   .topbar {
