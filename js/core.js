@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
 
 const DEFAULT_PURPOSES = ['Cuti', 'On Site', 'Dinas', 'New Hire Onsite', 'New Hire MCU', 'MCU Tahunan', 'Long Stay'];
 const ROOM_STATUSES = ['bersih', 'terisi', 'kotor', 'rusak'];
+const REMOTE_TABLE = 'mess_app_data';
 
 const state = {
   rooms: loadData(STORAGE_KEYS.rooms, seedRooms()),
@@ -21,6 +22,9 @@ const state = {
 
 let pendingCheckinEmployeeName = '';
 let editingGuestId = null;
+let remoteDataReady = false;
+let remoteDataSyncing = false;
+const remoteSaveTimers = new Map();
 
 const navigationHistory = ['dashboard'];
 let suppressHistory = false;
@@ -131,6 +135,94 @@ function loadData(storageKey, fallback) {
 
 function saveData(storageKey, data) {
   localStorage.setItem(storageKey, JSON.stringify(data));
+  scheduleRemoteSave(storageKey, data);
+}
+
+function storageKeyToStateName(storageKey) {
+  return Object.entries(STORAGE_KEYS).find(([, value]) => value === storageKey)?.[0] || '';
+}
+
+function hasMeaningfulLocalData() {
+  return Boolean(
+    state.employees.length
+    || state.guests.length
+    || state.meals.length
+    || state.reservations.length
+    || state.rooms.length !== 5
+    || state.rooms.some((room) => !['101', '102'].includes(text(room.roomNo)))
+  );
+}
+
+function cacheRemoteRowLocally(storageKey, payload) {
+  const stateName = storageKeyToStateName(storageKey);
+  if (!stateName || !(stateName in state)) return;
+  state[stateName] = Array.isArray(payload) ? payload : [];
+  localStorage.setItem(storageKey, JSON.stringify(state[stateName]));
+}
+
+function remoteRowsFromState(keys = Object.values(STORAGE_KEYS)) {
+  return keys.map((storageKey) => {
+    const stateName = storageKeyToStateName(storageKey);
+    return {
+      app_key: storageKey,
+      payload: state[stateName] || [],
+      updated_at: new Date().toISOString(),
+    };
+  });
+}
+
+async function uploadRemoteRows(keys = Object.values(STORAGE_KEYS)) {
+  if (!window.supabaseClient || !keys.length) return;
+  const rows = remoteRowsFromState(keys);
+  const { error } = await supabaseClient.from(REMOTE_TABLE).upsert(rows, { onConflict: 'app_key' });
+  if (error) console.error('Gagal sinkron data ke Supabase', error);
+}
+
+function scheduleRemoteSave(storageKey, data) {
+  if (!remoteDataReady || remoteDataSyncing || !window.supabaseClient) return;
+  clearTimeout(remoteSaveTimers.get(storageKey));
+  remoteSaveTimers.set(storageKey, setTimeout(async () => {
+    const { error } = await supabaseClient
+      .from(REMOTE_TABLE)
+      .upsert({ app_key: storageKey, payload: data, updated_at: new Date().toISOString() }, { onConflict: 'app_key' });
+    if (error) console.error(`Gagal menyimpan ${storageKey} ke Supabase`, error);
+  }, 400));
+}
+
+async function initRemoteDataSync() {
+  if (!window.supabaseClient) {
+    console.warn('Supabase belum tersedia. App memakai data lokal browser.');
+    return;
+  }
+
+  remoteDataSyncing = true;
+  const keys = Object.values(STORAGE_KEYS);
+
+  try {
+    const { data, error } = await supabaseClient
+      .from(REMOTE_TABLE)
+      .select('app_key,payload')
+      .in('app_key', keys);
+
+    if (error) throw error;
+
+    const remoteRows = Array.isArray(data) ? data : [];
+    const remoteKeys = new Set(remoteRows.map((row) => row.app_key));
+
+    remoteRows.forEach((row) => cacheRemoteRowLocally(row.app_key, row.payload));
+
+    const missingKeys = keys.filter((storageKey) => !remoteKeys.has(storageKey));
+    if (remoteRows.length === 0) {
+      if (hasMeaningfulLocalData()) await uploadRemoteRows(keys);
+    } else if (missingKeys.length && hasMeaningfulLocalData()) {
+      await uploadRemoteRows(missingKeys);
+    }
+  } catch (error) {
+    console.error('Gagal membaca data Supabase. App memakai data lokal browser.', error);
+  } finally {
+    remoteDataSyncing = false;
+    remoteDataReady = true;
+  }
 }
 
 function seedRooms() {
@@ -296,12 +388,6 @@ function showPage(pageId, title = '') {
   const pageTitle = $('pageTitle');
   if (pageTitle) pageTitle.textContent = title || document.querySelector(`[data-page="${pageId}"]`)?.textContent || '';
   if (typeof renderAll === 'function') renderAll();
-}
-
-function goBackPage() {
-  const previous = navigationHistory.pop() || 'dashboard';
-  suppressHistory = true;
-  showPage(previous);
 }
 
 function goBackPage() {
